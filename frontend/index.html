@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LeadGen AI — Smart Outreach Automation</title>
+  <meta name="description" content="AI-powered lead generation and outreach automation system for Dubai real estate and Montreal restaurants." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- ── Sidebar ─────────────────────────────────────────── -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">⚡</div>
+    <div>
+      <div class="logo-title">LeadGen AI</div>
+      <div class="logo-sub">Outreach Automation</div>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <a href="#" class="nav-item active" data-view="dashboard" id="nav-dashboard">
+      <span class="nav-icon">📊</span>
+      <span>Dashboard</span>
+    </a>
+    <a href="#" class="nav-item" data-view="leads" id="nav-leads">
+      <span class="nav-icon">👥</span>
+      <span>Leads</span>
+      <span class="nav-badge" id="badge-leads">0</span>
+    </a>
+    <a href="#" class="nav-item" data-view="scraper" id="nav-scraper">
+      <span class="nav-icon">🕷️</span>
+      <span>Scraper</span>
+    </a>
+    <a href="#" class="nav-item" data-view="outreach" id="nav-outreach">
+      <span class="nav-icon">📧</span>
+      <span>Outreach</span>
+    </a>
+    <a href="#" class="nav-item" data-view="analytics" id="nav-analytics">
+      <span class="nav-icon">📈</span>
+      <span>Analytics</span>
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="connection-status" id="connection-status">
+      <span class="status-dot online"></span>
+      <span>API Connected</span>
+    </div>
+    <a href="http://localhost:8000/docs" target="_blank" class="api-docs-link">
+      📖 API Docs
+    </a>
+  </div>
+</aside>
+
+<!-- ── Main Content ─────────────────────────────────────── -->
+<main class="main-content">
+
+  <!-- Top Bar -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <h1 class="page-title" id="page-title">Dashboard</h1>
+      <span class="page-sub" id="page-sub">Overview of your lead pipeline</span>
+    </div>
+    <div class="topbar-right">
+      <div class="email-quota" id="email-quota">
+        <span class="quota-icon">📧</span>
+        <span id="quota-text">0 / 50 emails today</span>
+        <div class="quota-bar"><div class="quota-fill" id="quota-fill"></div></div>
+      </div>
+      <button class="btn btn-primary" id="quick-scrape-btn" onclick="showView('scraper')">
+        + New Scrape
+      </button>
+    </div>
+  </header>
+
+  <!-- ── DASHBOARD VIEW ────────────────────────────── -->
+  <section class="view active" id="view-dashboard">
+
+    <!-- Stat Cards -->
+    <div class="stats-grid">
+      <div class="stat-card" data-color="purple">
+        <div class="stat-icon">👥</div>
+        <div class="stat-content">
+          <div class="stat-value" id="stat-total">—</div>
+          <div class="stat-label">Total Leads</div>
+        </div>
+        <div class="stat-sparkline"></div>
+      </div>
+      <div class="stat-card" data-color="cyan">
+        <div class="stat-icon">🔥</div>
+        <div class="stat-content">
+          <div class="stat-value" id="stat-hot">—</div>
+          <div class="stat-label">Hot Leads (7+)</div>
+        </div>
+      </div>
+      <div class="stat-card" data-color="green">
+        <div class="stat-icon">📧</div>
+        <div class="stat-content">
+          <div class="stat-value" id="stat-contacted">—</div>
+          <div class="stat-label">Contacted</div>
+        </div>
+      </div>
+      <div class="stat-card" data-color="pink">
+        <div class="stat-icon">💬</div>
+        <div class="stat-content">
+          <div class="stat-value" id="stat-replied">—</div>
+          <div class="stat-label">Replied</div>
+        </div>
+      </div>
+      <div class="stat-card" data-color="amber">
+        <div class="stat-icon">🎯</div>
+        <div class="stat-content">
+          <div class="stat-value" id="stat-conversion">—</div>
+          <div class="stat-label">Conversion Rate</div>
+        </div>
+      </div>
+      <div class="stat-card" data-color="blue">
+        <div class="stat-icon">✅</div>
+        <div class="stat-content">
+          <div class="stat-value" id="stat-closed">—</div>
+          <div class="stat-label">Closed</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Two-column lower section -->
+    <div class="dash-grid">
+      <!-- Top Leads -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">🔥 Top Leads by Score</h2>
+          <button class="btn btn-sm" onclick="showView('leads')">View All</button>
+        </div>
+        <div class="top-leads-list" id="top-leads-list">
+          <div class="empty-state">Loading...</div>
+        </div>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">🕐 Recent Leads</h2>
+        </div>
+        <div class="recent-leads-list" id="recent-leads-list">
+          <div class="empty-state">Loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pipeline status bars -->
+    <div class="card" style="margin-top:1.5rem">
+      <div class="card-header">
+        <h2 class="card-title">📊 Pipeline Status</h2>
+      </div>
+      <div class="pipeline-bars" id="pipeline-bars">
+        <div class="empty-state">Loading...</div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ── LEADS VIEW ─────────────────────────────────── -->
+  <section class="view" id="view-leads">
+
+    <!-- Filters Bar -->
+    <div class="filters-bar">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="lead-search" class="search-input" placeholder="Search business name, email, address..." />
+      </div>
+      <select class="filter-select" id="filter-status">
+        <option value="">All Statuses</option>
+        <option value="new">New</option>
+        <option value="analyzed">Analyzed</option>
+        <option value="message_ready">Message Ready</option>
+        <option value="contacted">Contacted</option>
+        <option value="replied">Replied</option>
+        <option value="interested">Interested</option>
+        <option value="closed">Closed</option>
+      </select>
+      <select class="filter-select" id="filter-city">
+        <option value="">All Cities</option>
+        <option value="Dubai">Dubai</option>
+        <option value="Montreal">Montreal</option>
+      </select>
+      <select class="filter-select" id="filter-score">
+        <option value="">Any Score</option>
+        <option value="7">Hot (7+)</option>
+        <option value="5">Warm (5+)</option>
+        <option value="3">Cool (3+)</option>
+      </select>
+      <button class="btn btn-primary" onclick="loadLeads(1)">Filter</button>
+    </div>
+
+    <!-- Leads Table -->
+    <div class="card table-card">
+      <div class="card-header">
+        <h2 class="card-title">All Leads <span class="count-badge" id="leads-count">0</span></h2>
+        <div class="bulk-actions" id="bulk-actions" style="display:none">
+          <button class="btn btn-sm" onclick="bulkAnalyze()">🤖 Analyze Selected</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="leads-table" id="leads-table">
+          <thead>
+            <tr>
+              <th><input type="checkbox" id="select-all" /></th>
+              <th>Business</th>
+              <th>City</th>
+              <th>Category</th>
+              <th>Score</th>
+              <th>Rating</th>
+              <th>Website</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="leads-tbody">
+            <tr><td colspan="9" class="empty-state">Loading leads...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination" id="leads-pagination"></div>
+    </div>
+  </section>
+
+  <!-- ── SCRAPER VIEW ───────────────────────────────── -->
+  <section class="view" id="view-scraper">
+
+    <div class="scraper-grid">
+      <!-- Launch Panel -->
+      <div class="card scraper-panel">
+        <div class="card-header">
+          <h2 class="card-title">🕷️ Launch Scraper</h2>
+        </div>
+        <div class="scraper-form">
+          <div class="form-group">
+            <label class="form-label">Quick Targets</label>
+            <div class="quick-targets" id="quick-targets">
+              <!-- Populated from /api/scrape/targets -->
+            </div>
+          </div>
+          <div class="form-divider">or custom search</div>
+          <div class="form-group">
+            <label class="form-label" for="scrape-category">Business Category</label>
+            <input type="text" id="scrape-category" class="form-input" placeholder="e.g. real estate agency, cafe, restaurant" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="scrape-city">City</label>
+            <input type="text" id="scrape-city" class="form-input" placeholder="e.g. Dubai, Montreal" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="scrape-country">Country</label>
+            <input type="text" id="scrape-country" class="form-input" placeholder="e.g. UAE, Canada" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="scrape-max">Max Results</label>
+            <input type="number" id="scrape-max" class="form-input" value="30" min="5" max="100" />
+          </div>
+          <button class="btn btn-primary btn-full" id="scrape-btn" onclick="startScrape()">
+            🚀 Start Scraping
+          </button>
+        </div>
+      </div>
+
+      <!-- Active Job Panel -->
+      <div class="card" id="active-job-card" style="display:none">
+        <div class="card-header">
+          <h2 class="card-title">⚡ Active Job</h2>
+          <span class="job-status-badge running" id="job-status-badge">Running</span>
+        </div>
+        <div class="job-details" id="job-details"></div>
+        <div class="progress-section">
+          <div class="progress-label">
+            <span id="progress-text">Scraping...</span>
+            <span id="progress-pct">0%</span>
+          </div>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="progress-bar"></div>
+          </div>
+          <div class="progress-stats">
+            <span>Found: <strong id="job-found">0</strong> new leads</span>
+            <span>Scanned: <strong id="job-scanned">0</strong> businesses</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Job History -->
+    <div class="card" style="margin-top:1.5rem">
+      <div class="card-header">
+        <h2 class="card-title">📋 Job History</h2>
+        <button class="btn btn-sm" onclick="loadJobs()">↻ Refresh</button>
+      </div>
+      <div class="table-wrap">
+        <table class="leads-table" id="jobs-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Query</th>
+              <th>Status</th>
+              <th>Found</th>
+              <th>Progress</th>
+              <th>Started</th>
+            </tr>
+          </thead>
+          <tbody id="jobs-tbody">
+            <tr><td colspan="6" class="empty-state">No jobs yet</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── OUTREACH VIEW ──────────────────────────────── -->
+  <section class="view" id="view-outreach">
+
+    <!-- Stats Row -->
+    <div class="outreach-stats" id="outreach-stats-row">
+      <div class="mini-stat">
+        <div class="mini-stat-value" id="out-sent">—</div>
+        <div class="mini-stat-label">Total Sent</div>
+      </div>
+      <div class="mini-stat">
+        <div class="mini-stat-value" id="out-today">—</div>
+        <div class="mini-stat-label">Sent Today</div>
+      </div>
+      <div class="mini-stat">
+        <div class="mini-stat-value" id="out-replies">—</div>
+        <div class="mini-stat-label">Replies</div>
+      </div>
+      <div class="mini-stat">
+        <div class="mini-stat-value" id="out-interested">—</div>
+        <div class="mini-stat-label">Interested</div>
+      </div>
+    </div>
+
+    <!-- Ready to Contact -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">📬 Ready to Contact <span class="count-badge" id="ready-count">0</span></h2>
+        <p class="card-sub">Leads with generated messages — review and send</p>
+      </div>
+      <div class="outreach-list" id="outreach-list">
+        <div class="empty-state">Loading...</div>
+      </div>
+    </div>
+
+    <!-- Follow-up Queue -->
+    <div class="card" style="margin-top:1.5rem">
+      <div class="card-header">
+        <h2 class="card-title">🔄 Follow-up Queue</h2>
+        <p class="card-sub">Auto-scheduled follow-ups (handled by scheduler)</p>
+      </div>
+      <div class="outreach-list" id="followup-list">
+        <div class="empty-state">No follow-ups pending</div>
+      </div>
+    </div>
+
+    <!-- Recent Outreach Logs -->
+    <div class="card" style="margin-top:1.5rem">
+      <div class="card-header">
+        <h2 class="card-title">📋 Outreach Log</h2>
+      </div>
+      <div class="table-wrap">
+        <table class="leads-table">
+          <thead>
+            <tr>
+              <th>Business</th>
+              <th>Type</th>
+              <th>Subject</th>
+              <th>Follow-up #</th>
+              <th>Sent At</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="outreach-log-tbody">
+            <tr><td colspan="6" class="empty-state">No outreach sent yet</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── ANALYTICS VIEW ────────────────────────────── -->
+  <section class="view" id="view-analytics">
+    <div class="analytics-grid">
+      <!-- Score Distribution -->
+      <div class="card chart-card">
+        <div class="card-header">
+          <h2 class="card-title">🎯 Score Distribution</h2>
+        </div>
+        <canvas id="chart-score" height="250"></canvas>
+      </div>
+      <!-- Status Breakdown -->
+      <div class="card chart-card">
+        <div class="card-header">
+          <h2 class="card-title">📊 Pipeline Breakdown</h2>
+        </div>
+        <canvas id="chart-status" height="250"></canvas>
+      </div>
+      <!-- By City -->
+      <div class="card chart-card">
+        <div class="card-header">
+          <h2 class="card-title">🌍 Leads by City</h2>
+        </div>
+        <canvas id="chart-city" height="250"></canvas>
+      </div>
+      <!-- Outreach Rate -->
+      <div class="card chart-card">
+        <div class="card-header">
+          <h2 class="card-title">📧 Outreach Funnel</h2>
+        </div>
+        <canvas id="chart-funnel" height="250"></canvas>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ── Lead Detail Modal ─────────────────────────────────── -->
+<div class="modal-overlay" id="lead-modal-overlay" onclick="closeLeadModal()">
+  <div class="modal" id="lead-modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div>
+        <h2 class="modal-title" id="modal-lead-name">Business Name</h2>
+        <p class="modal-sub" id="modal-lead-sub">Category · City</p>
+      </div>
+      <div class="modal-header-right">
+        <div class="score-circle" id="modal-score">—</div>
+        <button class="modal-close" onclick="closeLeadModal()">✕</button>
+      </div>
+    </div>
+    <div class="modal-body" id="modal-body">
+      <!-- Populated by JS -->
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeLeadModal()">Close</button>
+      <button class="btn btn-secondary" id="modal-analyze-btn">🤖 Analyze</button>
+      <button class="btn btn-secondary" id="modal-generate-btn">✍️ Generate Messages</button>
+      <button class="btn btn-primary" id="modal-send-btn">📧 Send Email</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Send Email Modal ──────────────────────────────────── -->
+<div class="modal-overlay" id="email-modal-overlay" onclick="closeEmailModal()">
+  <div class="modal modal-sm" id="email-modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h2 class="modal-title">📧 Send Email</h2>
+      <button class="modal-close" onclick="closeEmailModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">To Email</label>
+        <input type="email" id="email-to" class="form-input" placeholder="contact@business.com" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Subject</label>
+        <input type="text" id="email-subject" class="form-input" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Message</label>
+        <textarea id="email-body" class="form-textarea" rows="8"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeEmailModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="sendEmailConfirm()">Send Now</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toast ─────────────────────────────────────────────── -->
+<div class="toast-container" id="toast-container"></div>
+
+<script src="/static/js/api.js"></script>
+<script src="/static/js/app.js"></script>
+<script src="/static/js/leads.js"></script>
+<script src="/static/js/scraper.js"></script>
+<script src="/static/js/outreach.js"></script>
+</body>
+</html>
