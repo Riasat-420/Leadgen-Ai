@@ -13,6 +13,7 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import create_tables
+from migrate import run_migrations
 from outreach.email_sender import start_scheduler, stop_scheduler
 from routers import leads, scraper, outreach, dashboard
 from routers import tracking
@@ -51,6 +52,7 @@ if os.path.exists(FRONTEND_DIR):
 # ── Lifecycle ──────────────────────────────────────────────
 @app.on_event("startup")
 def on_startup():
+    run_migrations()
     create_tables()
     start_scheduler()
     print("[LeadGen AI] Server running at http://localhost:8000")
