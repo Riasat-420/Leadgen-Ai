@@ -1,14 +1,18 @@
 """
 Email Outreach Engine
 Sends cold emails and automated follow-up sequences via Gmail SMTP.
+Injects tracking pixel and tracked links for open/click analytics.
 Uses APScheduler to automatically send follow-ups on schedule.
 """
 import datetime
+import re
 import smtplib
 import ssl
+import uuid
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import Optional
+from urllib.parse import quote_plus
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
@@ -16,16 +20,28 @@ from apscheduler.triggers.interval import IntervalTrigger
 from config import (
     GMAIL_USER, GMAIL_APP_PASSWORD, SENDER_NAME,
     MAX_EMAILS_PER_DAY, FOLLOWUP_DAY_1, FOLLOWUP_DAY_2,
+    TRACKING_BASE_URL,
 )
 from database import SessionLocal, Lead, OutreachLog
 
 
-# ── SMTP Email Sender ──────────────────────────────────────
+def _wrap_links_with_tracking(html_body: str, tracking_id: str) -> str:
+    """Replace all <a href> links with tracked redirect URLs."""
+    def replace_link(match):
+        original_url = match.group(1)
+        if "localhost" in original_url or "track" in original_url:
+            return match.group(0)  # Don't double-wrap tracking links
+        encoded = quote_plus(original_url)
+        tracked = f"{TRACKING_BASE_URL}/api/track/click/{tracking_id}?url={encoded}"
+        return f'href="{tracked}"'
+    return re.sub(r'href="(https?://[^"]+)"', replace_link, html_body)
+
 
 def _build_mime_email(
     to_email: str,
     subject: str,
     body: str,
+    tracking_id: str,
     from_name: str = SENDER_NAME,
 ) -> MIMEMultipart:
     msg = MIMEMultipart("alternative")
@@ -36,8 +52,12 @@ def _build_mime_email(
     # Plain text part
     text_part = MIMEText(body, "plain", "utf-8")
 
-    # Basic HTML part (auto-wrap)
+    # HTML part with tracking pixel + tracked links
     html_body = body.replace("\n", "<br>")
+    html_body = _wrap_links_with_tracking(html_body, tracking_id)
+
+    pixel_url = f"{TRACKING_BASE_URL}/api/track/open/{tracking_id}"
+
     html_part = MIMEText(
         f"""<html><body style="font-family:Arial,sans-serif;font-size:15px;color:#222;max-width:600px;margin:auto;">
 <p>{html_body}</p>
@@ -45,6 +65,8 @@ def _build_mime_email(
 <p style="font-size:12px;color:#888;">
 To unsubscribe, reply with "unsubscribe" in the subject line.
 </p>
+<!-- Tracking pixel -->
+<img src="{pixel_url}" width="1" height="1" alt="" style="display:none;" />
 </body></html>""",
         "html",
         "utf-8",
@@ -73,14 +95,17 @@ def send_email(
 
     db = SessionLocal()
     try:
-        msg = _build_mime_email(to_email, subject, body)
+        # Generate unique tracking ID for this email
+        tracking_id = uuid.uuid4().hex
+
+        msg = _build_mime_email(to_email, subject, body, tracking_id)
         ctx = ssl.create_default_context()
 
         with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=ctx) as server:
             server.login(GMAIL_USER, GMAIL_APP_PASSWORD)
             server.sendmail(GMAIL_USER, to_email, msg.as_string())
 
-        # Log success
+        # Log success with tracking ID
         log = OutreachLog(
             lead_id=lead_id,
             message_type="email",
@@ -88,6 +113,10 @@ def send_email(
             message_body=body,
             status="sent",
             follow_up_number=follow_up_number,
+            tracking_id=tracking_id,
+            email_opened=False,
+            open_count=0,
+            link_clicked=False,
         )
         db.add(log)
 

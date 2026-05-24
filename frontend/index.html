@@ -8,6 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <!-- Lucide Icons — clean 2D line icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <link rel="stylesheet" href="/static/css/style.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
@@ -16,7 +18,9 @@
 <!-- ── Sidebar ─────────────────────────────────────────── -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
-    <div class="logo-icon">⚡</div>
+    <div class="logo-icon">
+      <i data-lucide="zap"></i>
+    </div>
     <div>
       <div class="logo-title">LeadGen AI</div>
       <div class="logo-sub">Outreach Automation</div>
@@ -25,24 +29,24 @@
 
   <nav class="sidebar-nav">
     <a href="#" class="nav-item active" data-view="dashboard" id="nav-dashboard">
-      <span class="nav-icon">📊</span>
+      <span class="nav-icon"><i data-lucide="layout-dashboard"></i></span>
       <span>Dashboard</span>
     </a>
     <a href="#" class="nav-item" data-view="leads" id="nav-leads">
-      <span class="nav-icon">👥</span>
+      <span class="nav-icon"><i data-lucide="users"></i></span>
       <span>Leads</span>
       <span class="nav-badge" id="badge-leads">0</span>
     </a>
     <a href="#" class="nav-item" data-view="scraper" id="nav-scraper">
-      <span class="nav-icon">🕷️</span>
+      <span class="nav-icon"><i data-lucide="scan-search"></i></span>
       <span>Scraper</span>
     </a>
     <a href="#" class="nav-item" data-view="outreach" id="nav-outreach">
-      <span class="nav-icon">📧</span>
+      <span class="nav-icon"><i data-lucide="send"></i></span>
       <span>Outreach</span>
     </a>
     <a href="#" class="nav-item" data-view="analytics" id="nav-analytics">
-      <span class="nav-icon">📈</span>
+      <span class="nav-icon"><i data-lucide="bar-chart-2"></i></span>
       <span>Analytics</span>
     </a>
   </nav>
@@ -53,7 +57,7 @@
       <span>API Connected</span>
     </div>
     <a href="http://localhost:8000/docs" target="_blank" class="api-docs-link">
-      📖 API Docs
+      <i data-lucide="book-open"></i> API Docs
     </a>
   </div>
 </aside>
@@ -69,12 +73,12 @@
     </div>
     <div class="topbar-right">
       <div class="email-quota" id="email-quota">
-        <span class="quota-icon">📧</span>
+        <span class="quota-icon"><i data-lucide="mail"></i></span>
         <span id="quota-text">0 / 50 emails today</span>
         <div class="quota-bar"><div class="quota-fill" id="quota-fill"></div></div>
       </div>
       <button class="btn btn-primary" id="quick-scrape-btn" onclick="showView('scraper')">
-        + New Scrape
+        <i data-lucide="plus"></i> New Scrape
       </button>
     </div>
   </header>
@@ -85,7 +89,7 @@
     <!-- Stat Cards -->
     <div class="stats-grid">
       <div class="stat-card" data-color="purple">
-        <div class="stat-icon">👥</div>
+        <div class="stat-icon"><i data-lucide="users"></i></div>
         <div class="stat-content">
           <div class="stat-value" id="stat-total">—</div>
           <div class="stat-label">Total Leads</div>
@@ -93,35 +97,35 @@
         <div class="stat-sparkline"></div>
       </div>
       <div class="stat-card" data-color="cyan">
-        <div class="stat-icon">🔥</div>
+        <div class="stat-icon"><i data-lucide="flame"></i></div>
         <div class="stat-content">
           <div class="stat-value" id="stat-hot">—</div>
           <div class="stat-label">Hot Leads (7+)</div>
         </div>
       </div>
       <div class="stat-card" data-color="green">
-        <div class="stat-icon">📧</div>
+        <div class="stat-icon"><i data-lucide="mail-check"></i></div>
         <div class="stat-content">
           <div class="stat-value" id="stat-contacted">—</div>
           <div class="stat-label">Contacted</div>
         </div>
       </div>
       <div class="stat-card" data-color="pink">
-        <div class="stat-icon">💬</div>
+        <div class="stat-icon"><i data-lucide="message-circle"></i></div>
         <div class="stat-content">
           <div class="stat-value" id="stat-replied">—</div>
           <div class="stat-label">Replied</div>
         </div>
       </div>
       <div class="stat-card" data-color="amber">
-        <div class="stat-icon">🎯</div>
+        <div class="stat-icon"><i data-lucide="target"></i></div>
         <div class="stat-content">
           <div class="stat-value" id="stat-conversion">—</div>
           <div class="stat-label">Conversion Rate</div>
         </div>
       </div>
       <div class="stat-card" data-color="blue">
-        <div class="stat-icon">✅</div>
+        <div class="stat-icon"><i data-lucide="circle-check"></i></div>
         <div class="stat-content">
           <div class="stat-value" id="stat-closed">—</div>
           <div class="stat-label">Closed</div>
@@ -134,7 +138,9 @@
       <!-- Top Leads -->
       <div class="card">
         <div class="card-header">
-          <h2 class="card-title">🔥 Top Leads by Score</h2>
+          <h2 class="card-title">
+            <i data-lucide="flame"></i> Top Leads by Score
+          </h2>
           <button class="btn btn-sm" onclick="showView('leads')">View All</button>
         </div>
         <div class="top-leads-list" id="top-leads-list">
@@ -145,7 +151,9 @@
       <!-- Recent Activity -->
       <div class="card">
         <div class="card-header">
-          <h2 class="card-title">🕐 Recent Leads</h2>
+          <h2 class="card-title">
+            <i data-lucide="clock"></i> Recent Leads
+          </h2>
         </div>
         <div class="recent-leads-list" id="recent-leads-list">
           <div class="empty-state">Loading...</div>
@@ -156,7 +164,9 @@
     <!-- Pipeline status bars -->
     <div class="card" style="margin-top:1.5rem">
       <div class="card-header">
-        <h2 class="card-title">📊 Pipeline Status</h2>
+        <h2 class="card-title">
+          <i data-lucide="bar-chart-3"></i> Pipeline Status
+        </h2>
       </div>
       <div class="pipeline-bars" id="pipeline-bars">
         <div class="empty-state">Loading...</div>
@@ -171,7 +181,7 @@
     <!-- Filters Bar -->
     <div class="filters-bar">
       <div class="search-wrap">
-        <span class="search-icon">🔍</span>
+        <span class="search-icon"><i data-lucide="search"></i></span>
         <input type="text" id="lead-search" class="search-input" placeholder="Search business name, email, address..." />
       </div>
       <select class="filter-select" id="filter-status">
@@ -195,7 +205,9 @@
         <option value="5">Warm (5+)</option>
         <option value="3">Cool (3+)</option>
       </select>
-      <button class="btn btn-primary" onclick="loadLeads(1)">Filter</button>
+      <button class="btn btn-primary" onclick="loadLeads(1)">
+        <i data-lucide="filter"></i> Filter
+      </button>
     </div>
 
     <!-- Leads Table -->
@@ -203,7 +215,9 @@
       <div class="card-header">
         <h2 class="card-title">All Leads <span class="count-badge" id="leads-count">0</span></h2>
         <div class="bulk-actions" id="bulk-actions" style="display:none">
-          <button class="btn btn-sm" onclick="bulkAnalyze()">🤖 Analyze Selected</button>
+          <button class="btn btn-sm" onclick="bulkAnalyze()">
+            <i data-lucide="cpu"></i> Analyze Selected
+          </button>
         </div>
       </div>
       <div class="table-wrap">
@@ -237,7 +251,18 @@
       <!-- Launch Panel -->
       <div class="card scraper-panel">
         <div class="card-header">
-          <h2 class="card-title">🕷️ Launch Scraper</h2>
+          <h2 class="card-title">
+            <i data-lucide="scan-search"></i> Launch Scraper
+          </h2>
+          <!-- Platform tabs -->
+          <div class="scraper-tabs">
+            <button class="scraper-tab active" id="gm-tab" onclick="showScrapeTab('google_maps')">
+              <i data-lucide="map-pin"></i> Google Maps
+            </button>
+            <button class="scraper-tab" id="platform-tab" onclick="showScrapeTab('platform')">
+              <i data-lucide="briefcase"></i> Platforms
+            </button>
+          </div>
         </div>
         <div class="scraper-form">
           <div class="form-group">
@@ -247,32 +272,62 @@
             </div>
           </div>
           <div class="form-divider">or custom search</div>
-          <div class="form-group">
-            <label class="form-label" for="scrape-category">Business Category</label>
-            <input type="text" id="scrape-category" class="form-input" placeholder="e.g. real estate agency, cafe, restaurant" />
+
+          <!-- Google Maps form -->
+          <div id="gm-form">
+            <div class="form-group">
+              <label class="form-label" for="scrape-category">Business Category</label>
+              <input type="text" id="scrape-category" class="form-input" placeholder="e.g. real estate agency, cafe, restaurant" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="scrape-city">City</label>
+              <input type="text" id="scrape-city" class="form-input" placeholder="e.g. Dubai, Montreal" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="scrape-country">Country</label>
+              <input type="text" id="scrape-country" class="form-input" placeholder="e.g. UAE, Canada" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="scrape-max">Max Results</label>
+              <input type="number" id="scrape-max" class="form-input" value="30" min="5" max="100" />
+            </div>
+            <button class="btn btn-primary btn-full" id="scrape-btn" onclick="startScrape()">
+              <i data-lucide="play"></i> Start Scraping
+            </button>
           </div>
-          <div class="form-group">
-            <label class="form-label" for="scrape-city">City</label>
-            <input type="text" id="scrape-city" class="form-input" placeholder="e.g. Dubai, Montreal" />
+
+          <!-- Platform form (Upwork / Freelancer / LinkedIn / Fiverr) -->
+          <div id="platform-form" style="display:none">
+            <div class="form-group">
+              <label class="form-label" for="platform-select">Platform</label>
+              <select id="platform-select" class="form-input filter-select" style="width:100%">
+                <option value="upwork">Upwork — Job Listings</option>
+                <option value="freelancer">Freelancer.com — Projects</option>
+                <option value="linkedin">LinkedIn — Company Pages</option>
+                <option value="fiverr">Fiverr — Buyer Demand</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="platform-keyword">Search Keyword</label>
+              <input type="text" id="platform-keyword" class="form-input" placeholder="e.g. web design, SEO, WordPress" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="platform-max">Max Results</label>
+              <input type="number" id="platform-max" class="form-input" value="30" min="5" max="100" />
+            </div>
+            <button class="btn btn-primary btn-full" id="platform-scrape-btn" onclick="startPlatformScrape()">
+              <i data-lucide="play"></i> Start Scraping
+            </button>
           </div>
-          <div class="form-group">
-            <label class="form-label" for="scrape-country">Country</label>
-            <input type="text" id="scrape-country" class="form-input" placeholder="e.g. UAE, Canada" />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="scrape-max">Max Results</label>
-            <input type="number" id="scrape-max" class="form-input" value="30" min="5" max="100" />
-          </div>
-          <button class="btn btn-primary btn-full" id="scrape-btn" onclick="startScrape()">
-            🚀 Start Scraping
-          </button>
         </div>
       </div>
 
       <!-- Active Job Panel -->
       <div class="card" id="active-job-card" style="display:none">
         <div class="card-header">
-          <h2 class="card-title">⚡ Active Job</h2>
+          <h2 class="card-title">
+            <i data-lucide="loader"></i> Active Job
+          </h2>
           <span class="job-status-badge running" id="job-status-badge">Running</span>
         </div>
         <div class="job-details" id="job-details"></div>
@@ -295,8 +350,12 @@
     <!-- Job History -->
     <div class="card" style="margin-top:1.5rem">
       <div class="card-header">
-        <h2 class="card-title">📋 Job History</h2>
-        <button class="btn btn-sm" onclick="loadJobs()">↻ Refresh</button>
+        <h2 class="card-title">
+          <i data-lucide="clipboard-list"></i> Job History
+        </h2>
+        <button class="btn btn-sm" onclick="loadJobs()">
+          <i data-lucide="refresh-cw"></i> Refresh
+        </button>
       </div>
       <div class="table-wrap">
         <table class="leads-table" id="jobs-table">
@@ -344,7 +403,10 @@
     <!-- Ready to Contact -->
     <div class="card">
       <div class="card-header">
-        <h2 class="card-title">📬 Ready to Contact <span class="count-badge" id="ready-count">0</span></h2>
+        <h2 class="card-title">
+          <i data-lucide="inbox"></i> Ready to Contact
+          <span class="count-badge" id="ready-count">0</span>
+        </h2>
         <p class="card-sub">Leads with generated messages — review and send</p>
       </div>
       <div class="outreach-list" id="outreach-list">
@@ -355,7 +417,9 @@
     <!-- Follow-up Queue -->
     <div class="card" style="margin-top:1.5rem">
       <div class="card-header">
-        <h2 class="card-title">🔄 Follow-up Queue</h2>
+        <h2 class="card-title">
+          <i data-lucide="repeat-2"></i> Follow-up Queue
+        </h2>
         <p class="card-sub">Auto-scheduled follow-ups (handled by scheduler)</p>
       </div>
       <div class="outreach-list" id="followup-list">
@@ -366,7 +430,9 @@
     <!-- Recent Outreach Logs -->
     <div class="card" style="margin-top:1.5rem">
       <div class="card-header">
-        <h2 class="card-title">📋 Outreach Log</h2>
+        <h2 class="card-title">
+          <i data-lucide="list"></i> Outreach Log
+        </h2>
       </div>
       <div class="table-wrap">
         <table class="leads-table">
@@ -394,28 +460,36 @@
       <!-- Score Distribution -->
       <div class="card chart-card">
         <div class="card-header">
-          <h2 class="card-title">🎯 Score Distribution</h2>
+          <h2 class="card-title">
+            <i data-lucide="target"></i> Score Distribution
+          </h2>
         </div>
         <canvas id="chart-score" height="250"></canvas>
       </div>
       <!-- Status Breakdown -->
       <div class="card chart-card">
         <div class="card-header">
-          <h2 class="card-title">📊 Pipeline Breakdown</h2>
+          <h2 class="card-title">
+            <i data-lucide="bar-chart-2"></i> Pipeline Breakdown
+          </h2>
         </div>
         <canvas id="chart-status" height="250"></canvas>
       </div>
       <!-- By City -->
       <div class="card chart-card">
         <div class="card-header">
-          <h2 class="card-title">🌍 Leads by City</h2>
+          <h2 class="card-title">
+            <i data-lucide="globe"></i> Leads by City
+          </h2>
         </div>
         <canvas id="chart-city" height="250"></canvas>
       </div>
       <!-- Outreach Rate -->
       <div class="card chart-card">
         <div class="card-header">
-          <h2 class="card-title">📧 Outreach Funnel</h2>
+          <h2 class="card-title">
+            <i data-lucide="mail"></i> Outreach Funnel
+          </h2>
         </div>
         <canvas id="chart-funnel" height="250"></canvas>
       </div>
@@ -434,7 +508,9 @@
       </div>
       <div class="modal-header-right">
         <div class="score-circle" id="modal-score">—</div>
-        <button class="modal-close" onclick="closeLeadModal()">✕</button>
+        <button class="modal-close" onclick="closeLeadModal()">
+          <i data-lucide="x"></i>
+        </button>
       </div>
     </div>
     <div class="modal-body" id="modal-body">
@@ -442,9 +518,15 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeLeadModal()">Close</button>
-      <button class="btn btn-secondary" id="modal-analyze-btn">🤖 Analyze</button>
-      <button class="btn btn-secondary" id="modal-generate-btn">✍️ Generate Messages</button>
-      <button class="btn btn-primary" id="modal-send-btn">📧 Send Email</button>
+      <button class="btn btn-secondary" id="modal-analyze-btn">
+        <i data-lucide="cpu"></i> Analyze
+      </button>
+      <button class="btn btn-secondary" id="modal-generate-btn">
+        <i data-lucide="pencil-line"></i> Generate Messages
+      </button>
+      <button class="btn btn-primary" id="modal-send-btn">
+        <i data-lucide="send"></i> Send Email
+      </button>
     </div>
   </div>
 </div>
@@ -453,8 +535,12 @@
 <div class="modal-overlay" id="email-modal-overlay" onclick="closeEmailModal()">
   <div class="modal modal-sm" id="email-modal" onclick="event.stopPropagation()">
     <div class="modal-header">
-      <h2 class="modal-title">📧 Send Email</h2>
-      <button class="modal-close" onclick="closeEmailModal()">✕</button>
+      <h2 class="modal-title">
+        <i data-lucide="send"></i> Send Email
+      </h2>
+      <button class="modal-close" onclick="closeEmailModal()">
+        <i data-lucide="x"></i>
+      </button>
     </div>
     <div class="modal-body">
       <div class="form-group">
@@ -472,7 +558,9 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeEmailModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="sendEmailConfirm()">Send Now</button>
+      <button class="btn btn-primary" onclick="sendEmailConfirm()">
+        <i data-lucide="send"></i> Send Now
+      </button>
     </div>
   </div>
 </div>
@@ -485,5 +573,7 @@
 <script src="/static/js/leads.js"></script>
 <script src="/static/js/scraper.js"></script>
 <script src="/static/js/outreach.js"></script>
+<!-- Initialize Lucide icons after all content is loaded -->
+<script>lucide.createIcons();</script>
 </body>
 </html>

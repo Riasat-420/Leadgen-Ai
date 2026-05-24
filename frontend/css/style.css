@@ -51,6 +51,56 @@
   --transition:   0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* ── Lucide SVG Icon Styles ─────────────────────────────── */
+/* All Lucide icons rendered as clean 2D stroke SVGs */
+[data-lucide],
+.lucide {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+/* Logo icon — larger */
+.logo-icon [data-lucide] { width: 20px; height: 20px; color: #fff; }
+
+/* Sidebar nav icons */
+.nav-icon [data-lucide] { width: 16px; height: 16px; }
+
+/* Stat card icons — colored per card */
+.stat-icon [data-lucide] { width: 22px; height: 22px; }
+.stat-card[data-color="purple"] .stat-icon [data-lucide] { color: var(--primary); }
+.stat-card[data-color="cyan"]   .stat-icon [data-lucide] { color: var(--cyan); }
+.stat-card[data-color="green"]  .stat-icon [data-lucide] { color: var(--green); }
+.stat-card[data-color="pink"]   .stat-icon [data-lucide] { color: var(--pink); }
+.stat-card[data-color="amber"]  .stat-icon [data-lucide] { color: var(--amber); }
+.stat-card[data-color="blue"]   .stat-icon [data-lucide] { color: var(--blue); }
+
+/* Card titles */
+.card-title [data-lucide] { width: 15px; height: 15px; color: var(--text-3); margin-right: 4px; }
+
+/* Email quota icon */
+.quota-icon [data-lucide] { width: 14px; height: 14px; color: var(--cyan); }
+
+/* Search icon inside filter bar */
+.search-icon [data-lucide] { width: 14px; height: 14px; color: var(--text-3); }
+
+/* Button icons */
+.btn [data-lucide] { width: 14px; height: 14px; }
+
+/* Modal close button */
+.modal-close [data-lucide] { width: 16px; height: 16px; }
+
+/* API docs link */
+.api-docs-link [data-lucide] { width: 12px; height: 12px; vertical-align: middle; }
+
+
 /* ── Reset & Base ──────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -820,19 +870,42 @@ input, select, textarea { font-family: inherit; }
 .quick-targets {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.platform-group {
+  margin-bottom: 8px;
+}
+
+.platform-group-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 6px 4px 4px;
+}
+
+.platform-targets {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
 .quick-target-btn {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
+  gap: 10px;
+  padding: 9px 12px;
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   color: var(--text);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   transition: all var(--transition);
   cursor: pointer;
@@ -845,7 +918,65 @@ input, select, textarea { font-family: inherit; }
   color: var(--primary);
 }
 
-.quick-target-icon { font-size: 18px; }
+/* Scraper tabs */
+.scraper-tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.scraper-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-3);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.scraper-tab [data-lucide] { width: 12px; height: 12px; }
+
+.scraper-tab:hover { background: var(--surface-2); color: var(--text-2); }
+
+.scraper-tab.active {
+  background: var(--primary-dim);
+  border-color: rgba(99,102,241,0.4);
+  color: var(--primary);
+}
+
+/* Source badge for leads table */
+.source-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 5px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.source-google_maps { background: rgba(99,102,241,0.15); color: var(--primary); }
+.source-upwork      { background: rgba(16,185,129,0.15); color: var(--green); }
+.source-freelancer  { background: rgba(245,158,11,0.15); color: var(--amber); }
+.source-linkedin    { background: rgba(6,182,212,0.15);  color: var(--cyan); }
+.source-fiverr      { background: rgba(29,191,115,0.15); color: #1dbf73; }
+
+/* Tracking status indicators */
+.track-dot {
+  display: inline-block;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--surface-3);
+}
+.track-dot.opened  { background: var(--green);  box-shadow: 0 0 5px var(--green); }
+.track-dot.clicked { background: var(--primary); box-shadow: 0 0 5px var(--primary); }
 
 /* Progress */
 .progress-section { padding: 20px; }

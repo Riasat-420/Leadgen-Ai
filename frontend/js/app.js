@@ -51,10 +51,10 @@ document.querySelectorAll('.nav-item').forEach(item => {
 
 // ── Toast Notifications ───────────────────────────────────
 function toast(message, type = 'info', duration = 3500) {
-  const icons = { success: '✅', error: '❌', info: '💬', warning: '⚠️' };
+  const icons = { success: '✓', error: '✗', info: 'ℹ', warning: '⚠' };
   const el = document.createElement('div');
   el.className = `toast ${type}`;
-  el.innerHTML = `<span>${icons[type]}</span><span>${message}</span>`;
+  el.innerHTML = `<span class="toast-icon-wrap">${icons[type]}</span><span>${message}</span>`;
   document.getElementById('toast-container').appendChild(el);
   setTimeout(() => {
     el.style.animation = 'slideInRight 0.3s reverse ease';
@@ -313,7 +313,7 @@ function renderLeadModal(lead) {
         </div>
         <div class="modal-field">
           <div class="modal-field-label">Rating</div>
-          <div class="modal-field-value">${lead.google_rating ? `⭐ ${lead.google_rating} (${lead.review_count || 0} reviews)` : '—'}</div>
+          <div class="modal-field-value">${lead.google_rating ? `<i data-lucide="star" style="width:14px;height:14px;display:inline-block;fill:var(--amber);stroke:var(--amber);vertical-align:middle;margin-right:2px"></i> ${lead.google_rating} (${lead.review_count || 0} reviews)` : '—'}</div>
         </div>
         <div class="modal-field">
           <div class="modal-field-label">Website</div>
@@ -359,7 +359,7 @@ function renderLeadModal(lead) {
           </div>
         </div>
       </div>
-      ${lead.pitch_angle ? `<div style="margin-top:14px;padding:12px;background:var(--primary-dim);border-radius:8px;font-size:13px;color:var(--primary)">💡 <strong>Pitch:</strong> ${esc(lead.pitch_angle)}</div>` : ''}
+      ${lead.pitch_angle ? `<div style="margin-top:14px;padding:12px;background:var(--primary-dim);border-radius:8px;font-size:13px;color:var(--primary)"><i data-lucide="lightbulb" style="width:14px;height:14px;display:inline-block;vertical-align:middle;margin-right:4px"></i> <strong>Pitch:</strong> ${esc(lead.pitch_angle)}</div>` : ''}
     </div>` : '<div class="modal-section"><div class="empty-state" style="padding:16px">No AI analysis yet — click Analyze</div></div>'}
 
     <!-- Messages -->
@@ -367,10 +367,10 @@ function renderLeadModal(lead) {
     <div class="modal-section">
       <div class="modal-section-title">Generated Messages</div>
       <div class="msg-tabs">
-        <button class="msg-tab active" onclick="switchTab(this,'tab-email')">📧 Cold Email</button>
-        <button class="msg-tab" onclick="switchTab(this,'tab-whatsapp')">💬 WhatsApp</button>
-        <button class="msg-tab" onclick="switchTab(this,'tab-follow1')">🔄 Follow-up 1</button>
-        <button class="msg-tab" onclick="switchTab(this,'tab-follow2')">🔄 Follow-up 2</button>
+        <button class="msg-tab active" onclick="switchTab(this,'tab-email')"><i data-lucide="mail" style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:4px"></i> Cold Email</button>
+        <button class="msg-tab" onclick="switchTab(this,'tab-whatsapp')"><i data-lucide="message-square" style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:4px"></i> WhatsApp</button>
+        <button class="msg-tab" onclick="switchTab(this,'tab-follow1')"><i data-lucide="refresh-cw" style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:4px"></i> Follow-up 1</button>
+        <button class="msg-tab" onclick="switchTab(this,'tab-follow2')"><i data-lucide="refresh-cw" style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:4px"></i> Follow-up 2</button>
       </div>
       <div class="msg-panel active" id="tab-email">
         <div style="font-size:12px;color:var(--text-3);margin-bottom:6px">Subject: <strong style="color:var(--text)">${esc(lead.cold_email_subject)}</strong></div>
@@ -409,6 +409,8 @@ function renderLeadModal(lead) {
       </div>
     </div>
   `;
+  if (window.lucide) lucide.createIcons();
+}
 }
 
 function switchTab(btn, tabId) {
@@ -458,7 +460,7 @@ async function sendEmailConfirm() {
     });
 
     if (res.success) {
-      toast('Email sent successfully! ✅', 'success');
+      toast('Email sent successfully!', 'success');
       closeEmailModal();
       closeLeadModal();
     } else {

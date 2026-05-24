@@ -53,10 +53,11 @@ const API = {
   async deleteLead(id)      { return this.del(`/api/leads/${id}`); },
 
   // ── Scraper ───────────────────────────────────────────
-  async startScrape(d)       { return this.post('/api/scrape/start', d); },
-  async scrapeStatus(id)     { return this.get(`/api/scrape/status/${id}`); },
-  async getJobs()            { return this.get('/api/scrape/jobs'); },
-  async getTargets()         { return this.get('/api/scrape/targets'); },
+  async startScrape(d)           { return this.post('/api/scrape/start', d); },
+  async startPlatformScrape(d)   { return this.post('/api/scrape/platform', d); },
+  async scrapeStatus(id)         { return this.get(`/api/scrape/status/${id}`); },
+  async getJobs()                { return this.get('/api/scrape/jobs'); },
+  async getTargets()             { return this.get('/api/scrape/targets'); },
 
   // ── Outreach ──────────────────────────────────────────
   async sendEmail(d)         { return this.post('/api/outreach/send-email', d); },

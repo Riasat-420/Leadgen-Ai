@@ -29,6 +29,7 @@ class Lead(Base):
     address       = Column(String)
     city          = Column(String, index=True)
     country       = Column(String)
+    source        = Column(String, default="google_maps", index=True)  # google_maps|upwork|freelancer|linkedin|fiverr
 
     # Google Maps data
     google_rating = Column(Float)
@@ -88,6 +89,14 @@ class OutreachLog(Base):
     sent_at          = Column(DateTime, default=datetime.datetime.utcnow)
     status           = Column(String, default="sent")  # sent | failed | delivered
     follow_up_number = Column(Integer, default=0)      # 0 = initial
+
+    # Email tracking
+    tracking_id      = Column(String, unique=True, index=True)
+    email_opened     = Column(Boolean, default=False)
+    email_opened_at  = Column(DateTime)
+    link_clicked     = Column(Boolean, default=False)
+    link_clicked_at  = Column(DateTime)
+    open_count       = Column(Integer, default=0)
 
 
 class ScrapeJob(Base):

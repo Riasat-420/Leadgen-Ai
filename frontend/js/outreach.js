@@ -4,6 +4,7 @@ async function loadOutreach() {
   await Promise.all([
     loadOutreachStats(),
     loadReadyToContact(),
+    loadFollowupQueue(),
     loadOutreachLogs(),
   ]);
 }
@@ -49,26 +50,28 @@ async function loadReadyToContact() {
             ${scoreBadge(lead.lead_score)}
           </div>
           ${lead.cold_email_subject
-            ? `<div style="font-size:12px;font-weight:600;color:var(--text-2);margin:6px 0 2px">📧 ${esc(lead.cold_email_subject)}</div>`
+            ? `<div style="font-size:12px;font-weight:600;color:var(--text-2);margin:6px 0 2px"><i data-lucide="mail" style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:4px"></i> ${esc(lead.cold_email_subject)}</div>`
             : ''}
           <div class="outreach-preview">${esc(lead.cold_email_body || '—')}</div>
           ${lead.email
-            ? `<div style="font-size:11px;color:var(--primary);margin-top:6px">📬 ${esc(lead.email)}</div>`
-            : '<div style="font-size:11px;color:var(--amber);margin-top:6px">⚠️ No email address — update manually</div>'}
+            ? `<div style="font-size:11px;color:var(--primary);margin-top:6px"><i data-lucide="send" style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:4px"></i> ${esc(lead.email)}</div>`
+            : '<div style="font-size:11px;color:var(--amber);margin-top:6px"><i data-lucide="alert-triangle" style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:4px"></i> No email address — update manually</div>'}
         </div>
         <div class="outreach-actions">
           <button class="btn btn-sm btn-primary" onclick="sendDirectEmail(${lead.id})" ${!lead.email ? 'disabled title="No email address"' : ''}>
-            📧 Send
+            <i data-lucide="send" style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:4px"></i> Send
           </button>
           <button class="btn btn-sm btn-secondary" onclick="openLeadModal(${lead.id})">
-            👁️ View
+            <i data-lucide="eye" style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:4px"></i> View
           </button>
           <button class="btn btn-sm btn-ghost" onclick="openEmailForLead(${lead.id})">
-            ✏️ Edit
+            <i data-lucide="edit-2" style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:4px"></i> Edit
           </button>
         </div>
       </div>
     `).join('');
+
+    if (window.lucide) lucide.createIcons();
 
   } catch (e) {
     el.innerHTML = `<div class="empty-state" style="color:var(--red)">Error: ${esc(e.message)}</div>`;
@@ -99,16 +102,18 @@ async function loadFollowupQueue() {
               <span style="margin-left:8px;font-size:11px;color:var(--text-3)">${esc(lead.city || '')}</span>
             </div>
             <div style="font-size:12px;color:${isPast ? 'var(--red)' : 'var(--text-3)'};margin-top:4px">
-              ${isPast ? '⚡ Due now' : `🕐 Due ${due.toLocaleDateString()}`}
+              ${isPast ? '<i data-lucide="zap" style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:2px"></i> Due now' : `<i data-lucide="clock" style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:2px"></i> Due ${due.toLocaleDateString()}`}
               · Follow-up #${lead.emails_sent}
             </div>
           </div>
           <div class="outreach-actions">
-            ${isPast ? `<button class="btn btn-sm btn-primary" onclick="sendFollowup(${lead.id})">Send Now</button>` : ''}
-            <button class="btn btn-sm btn-ghost" onclick="openLeadModal(${lead.id})">View</button>
+            ${isPast ? `<button class="btn btn-sm btn-primary" onclick="sendFollowup(${lead.id})"><i data-lucide="send" style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:4px"></i> Send Now</button>` : ''}
+            <button class="btn btn-sm btn-ghost" onclick="openLeadModal(${lead.id})"><i data-lucide="eye" style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:4px"></i> View</button>
           </div>
         </div>`;
     }).join('');
+
+    if (window.lucide) lucide.createIcons();
 
   } catch (e) {
     el.innerHTML = `<div class="empty-state">Error: ${esc(e.message)}</div>`;
@@ -156,6 +161,8 @@ async function loadOutreachLogs() {
       </tr>
     `).join('');
 
+    if (window.lucide) lucide.createIcons();
+
   } catch (e) {
     tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Error: ${esc(e.message)}</td></tr>`;
   }
@@ -176,7 +183,7 @@ async function sendDirectEmail(leadId) {
     });
 
     if (res.success) {
-      toast(`Email sent to ${lead.business_name}! ✅`, 'success');
+      toast(`Email sent to ${lead.business_name}!`, 'success');
       loadOutreach();
     } else {
       toast('Send failed — check Gmail credentials', 'error');
@@ -204,7 +211,7 @@ async function sendFollowup(leadId) {
     });
 
     if (res.success) {
-      toast(`Follow-up #${followUpNum} sent! ✅`, 'success');
+      toast(`Follow-up #${followUpNum} sent!`, 'success');
       loadOutreach();
     } else {
       toast('Send failed', 'error');

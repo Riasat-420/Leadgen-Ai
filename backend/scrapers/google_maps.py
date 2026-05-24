@@ -13,6 +13,7 @@ from playwright.async_api import async_playwright, Page
 
 from database import SessionLocal, Lead, ScrapeJob
 from config import SCRAPE_DELAY_MIN, SCRAPE_DELAY_MAX
+from scrapers.email_extractor import extract_emails_from_website
 
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -111,10 +112,21 @@ async def _extract_business_details(page: Page, city: str, category: str, countr
         # ── Maps URL ──────────────────────────────────────
         maps_url = page.url
 
+        # ── Email (from website crawl) ──────────────────────
+        email = None
+        if website and website.startswith("http"):
+            try:
+                email = extract_emails_from_website(website)
+                if email:
+                    print(f"[Scraper] Email found for {name}: {email}")
+            except Exception as e:
+                print(f"[Scraper] Email extraction error for {name}: {e}")
+
         return {
             "business_name": name,
             "category": detected_category,
             "phone": phone or None,
+            "email": email or None,
             "website": website or None,
             "address": address or None,
             "city": city,
@@ -123,6 +135,7 @@ async def _extract_business_details(page: Page, city: str, category: str, countr
             "review_count": review_count,
             "maps_url": maps_url,
             "has_website": bool(website and website.startswith("http")),
+            "source": "google_maps",
         }
 
     except Exception as e:

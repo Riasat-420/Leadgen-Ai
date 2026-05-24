@@ -52,18 +52,18 @@ async function loadLeads(page = 1) {
         <td>${scoreBadge(lead.lead_score)}</td>
         <td>
           ${lead.google_rating
-            ? `<span class="star-rating">⭐</span> <span style="font-size:12px">${lead.google_rating}</span>`
+            ? `<i data-lucide="star" style="width:14px;height:14px;display:inline-block;fill:var(--amber);stroke:var(--amber);vertical-align:middle;margin-right:2px"></i> <span style="font-size:12px">${lead.google_rating}</span>`
             : '<span style="color:var(--text-3)">—</span>'}
         </td>
         <td>${websiteLink(lead.website)}</td>
         <td>${statusBadge(lead.status)}</td>
         <td>
           <div class="action-group">
-            <button class="btn-icon" title="View Details" onclick="openLeadModal(${lead.id})">👁️</button>
-            <button class="btn-icon" title="Analyze" onclick="analyzeLeadInline(${lead.id}, this)">🤖</button>
-            <button class="btn-icon" title="Generate Messages" onclick="generateMessagesInline(${lead.id}, this)">✍️</button>
-            <button class="btn-icon" title="Send Email" onclick="openEmailForLead(${lead.id})">📧</button>
-            <button class="btn-icon" title="Delete" onclick="deleteLeadInline(${lead.id}, this)" style="color:var(--red)">🗑️</button>
+            <button class="btn-icon" title="View Details" onclick="openLeadModal(${lead.id})"><i data-lucide="eye" style="width:14px;height:14px;display:inline-block;vertical-align:middle"></i></button>
+            <button class="btn-icon" title="Analyze" onclick="analyzeLeadInline(${lead.id}, this)"><i data-lucide="cpu" style="width:14px;height:14px;display:inline-block;vertical-align:middle"></i></button>
+            <button class="btn-icon" title="Generate Messages" onclick="generateMessagesInline(${lead.id}, this)"><i data-lucide="pencil-line" style="width:14px;height:14px;display:inline-block;vertical-align:middle"></i></button>
+            <button class="btn-icon" title="Send Email" onclick="openEmailForLead(${lead.id})"><i data-lucide="mail" style="width:14px;height:14px;display:inline-block;vertical-align:middle"></i></button>
+            <button class="btn-icon" title="Delete" onclick="deleteLeadInline(${lead.id}, this)" style="color:var(--red)"><i data-lucide="trash-2" style="width:14px;height:14px;display:inline-block;vertical-align:middle"></i></button>
           </div>
         </td>
       </tr>
@@ -71,6 +71,8 @@ async function loadLeads(page = 1) {
 
     // Pagination
     renderPagination(data.pages, page);
+
+    if (window.lucide) lucide.createIcons();
 
   } catch (e) {
     console.error('Load leads error:', e);
@@ -102,30 +104,47 @@ function renderPagination(totalPages, current) {
 
 // Inline actions
 async function analyzeLeadInline(id, btn) {
-  btn.textContent = '⏳';
+  btn.innerHTML = '<i data-lucide="loader" style="width:14px;height:14px;display:inline-block;vertical-align:middle"></i>';
+  if (window.lucide) lucide.createIcons();
   btn.disabled = true;
   try {
     await API.analyzeLead(id);
     toast(`Analysis started for lead #${id}`, 'info');
-    btn.textContent = '✅';
-    setTimeout(() => { btn.textContent = '🤖'; btn.disabled = false; }, 3000);
+    btn.innerHTML = '<i data-lucide="check" style="width:14px;height:14px;display:inline-block;vertical-align:middle;color:var(--green)"></i>';
+    if (window.lucide) lucide.createIcons();
+    setTimeout(() => {
+      btn.innerHTML = '<i data-lucide="cpu" style="width:14px;height:14px;display:inline-block;vertical-align:middle"></i>';
+      if (window.lucide) lucide.createIcons();
+      btn.disabled = false;
+    }, 3000);
   } catch (e) {
     toast(e.message, 'error');
-    btn.textContent = '🤖'; btn.disabled = false;
+    btn.innerHTML = '<i data-lucide="cpu" style="width:14px;height:14px;display:inline-block;vertical-align:middle"></i>';
+    if (window.lucide) lucide.createIcons();
+    btn.disabled = false;
   }
 }
 
 async function generateMessagesInline(id, btn) {
-  btn.textContent = '⏳';
+  btn.innerHTML = '<i data-lucide="loader" style="width:14px;height:14px;display:inline-block;vertical-align:middle"></i>';
+  if (window.lucide) lucide.createIcons();
   btn.disabled = true;
   try {
     await API.generateMessages(id);
     toast('Generating messages...', 'info');
-    btn.textContent = '✅';
-    setTimeout(() => { btn.textContent = '✍️'; btn.disabled = false; loadLeads(_leadsPage); }, 5000);
+    btn.innerHTML = '<i data-lucide="check" style="width:14px;height:14px;display:inline-block;vertical-align:middle;color:var(--green)"></i>';
+    if (window.lucide) lucide.createIcons();
+    setTimeout(() => {
+      btn.innerHTML = '<i data-lucide="pencil-line" style="width:14px;height:14px;display:inline-block;vertical-align:middle"></i>';
+      if (window.lucide) lucide.createIcons();
+      btn.disabled = false;
+      loadLeads(_leadsPage);
+    }, 5000);
   } catch (e) {
     toast(e.message, 'error');
-    btn.textContent = '✍️'; btn.disabled = false;
+    btn.innerHTML = '<i data-lucide="pencil-line" style="width:14px;height:14px;display:inline-block;vertical-align:middle"></i>';
+    if (window.lucide) lucide.createIcons();
+    btn.disabled = false;
   }
 }
 
@@ -167,7 +186,7 @@ async function bulkAnalyze() {
     try { await API.analyzeLead(id); done++; } catch {}
     await new Promise(r => setTimeout(r, 500));
   }
-  toast(`Queued analysis for ${done} leads ✅`, 'success');
+  toast(`Queued analysis for ${done} leads`, 'success');
 }
 
 // Filter: search on Enter

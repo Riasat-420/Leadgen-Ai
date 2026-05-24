@@ -1,7 +1,9 @@
 """
-Scraper Router — Launch and monitor Google Maps scraping jobs.
+Scraper Router — Launch and monitor scraping jobs across all platforms.
+Supports Google Maps, Upwork, Freelancer, LinkedIn, and Fiverr.
 """
 import asyncio
+import threading
 from typing import Optional
 
 from fastapi import APIRouter, Depends, BackgroundTasks
@@ -10,6 +12,10 @@ from sqlalchemy.orm import Session
 
 from database import get_db, ScrapeJob, SessionLocal
 from scrapers.google_maps import scrape_google_maps
+from scrapers.upwork_scraper import scrape_upwork
+from scrapers.freelancer_scraper import scrape_freelancer
+from scrapers.linkedin_scraper import scrape_linkedin
+from scrapers.fiverr_scraper import scrape_fiverr
 from config import DEFAULT_TARGETS, DEFAULT_MAX_RESULTS
 
 router = APIRouter(prefix="/api/scrape", tags=["scraper"])
@@ -20,6 +26,12 @@ class ScrapeRequest(BaseModel):
     city: str
     country: Optional[str] = "Unknown"
     max_results: Optional[int] = DEFAULT_MAX_RESULTS
+
+
+class PlatformScrapeRequest(BaseModel):
+    platform: str       # upwork | freelancer | linkedin | fiverr
+    keyword: str
+    max_results: Optional[int] = 30
 
 
 def _job_to_dict(job: ScrapeJob) -> dict:
@@ -40,9 +52,10 @@ def _job_to_dict(job: ScrapeJob) -> dict:
     }
 
 
-def _run_scraper_sync(job_id: int, query: str, city: str, category: str,
-                      country: str, max_results: int):
-    """Runs the async scraper in a new event loop (for BackgroundTasks thread)."""
+# ── Google Maps (async via new event loop) ─────────────────
+
+def _run_google_maps_sync(job_id: int, query: str, city: str, category: str,
+                          country: str, max_results: int):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
@@ -54,10 +67,10 @@ def _run_scraper_sync(job_id: int, query: str, city: str, category: str,
 
 
 @router.post("/start")
-def start_scrape(req: ScrapeRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+def start_scrape(req: ScrapeRequest, background_tasks: BackgroundTasks,
+                 db: Session = Depends(get_db)):
     query = f"{req.category} in {req.city}"
 
-    # Create job record
     job = ScrapeJob(
         query=query,
         city=req.city,
@@ -69,13 +82,65 @@ def start_scrape(req: ScrapeRequest, background_tasks: BackgroundTasks, db: Sess
     db.commit()
     db.refresh(job)
 
-    # Launch in background
     background_tasks.add_task(
-        _run_scraper_sync,
+        _run_google_maps_sync,
         job.id, query, req.city, req.category, req.country, req.max_results,
     )
 
-    return {"job_id": job.id, "message": f"Scrape started for '{query}'"}
+    return {"job_id": job.id, "message": f"Google Maps scrape started for '{query}'"}
+
+
+# ── Platform scrapers (Upwork, Freelancer, LinkedIn, Fiverr) ─
+
+def _run_platform_scraper(platform: str, keyword: str, job_id: int, max_results: int):
+    """Run the appropriate platform scraper in a background thread."""
+    scraper_map = {
+        "upwork":     scrape_upwork,
+        "freelancer": scrape_freelancer,
+        "linkedin":   scrape_linkedin,
+        "fiverr":     scrape_fiverr,
+    }
+    fn = scraper_map.get(platform)
+    if fn:
+        fn(keyword, job_id, max_results)
+    else:
+        print(f"[Scraper Router] Unknown platform: {platform}")
+
+
+@router.post("/platform")
+def start_platform_scrape(req: PlatformScrapeRequest, background_tasks: BackgroundTasks,
+                           db: Session = Depends(get_db)):
+    """Launch a scraping job for Upwork, Freelancer, LinkedIn, or Fiverr."""
+    platform_labels = {
+        "upwork": "Upwork",
+        "freelancer": "Freelancer.com",
+        "linkedin": "LinkedIn",
+        "fiverr": "Fiverr",
+    }
+    label = platform_labels.get(req.platform, req.platform.title())
+    query = f"[{label}] {req.keyword}"
+
+    job = ScrapeJob(
+        query=query,
+        city="Remote",
+        category=req.keyword,
+        country="Global",
+        status="pending",
+    )
+    db.add(job)
+    db.commit()
+    db.refresh(job)
+
+    background_tasks.add_task(
+        _run_platform_scraper,
+        req.platform, req.keyword, job.id, req.max_results,
+    )
+
+    return {
+        "job_id": job.id,
+        "message": f"{label} scrape started for '{req.keyword}'",
+        "platform": req.platform,
+    }
 
 
 @router.get("/status/{job_id}")
@@ -99,5 +164,5 @@ def list_jobs(db: Session = Depends(get_db), limit: int = 20):
 
 @router.get("/targets")
 def get_default_targets():
-    """Return the pre-configured target markets."""
+    """Return all pre-configured target markets across all platforms."""
     return DEFAULT_TARGETS

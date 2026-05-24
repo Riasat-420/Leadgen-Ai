@@ -15,6 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from database import create_tables
 from outreach.email_sender import start_scheduler, stop_scheduler
 from routers import leads, scraper, outreach, dashboard
+from routers import tracking
 
 app = FastAPI(
     title="LeadGen AI",
@@ -36,6 +37,7 @@ app.include_router(leads.router)
 app.include_router(scraper.router)
 app.include_router(outreach.router)
 app.include_router(dashboard.router)
+app.include_router(tracking.router)
 
 # ── Static Frontend ────────────────────────────────────────
 FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend")

@@ -34,9 +34,26 @@ DEFAULT_MAX_RESULTS: int = 30
 HOST: str = os.getenv("HOST", "0.0.0.0")
 PORT: int = int(os.getenv("PORT", "8000"))
 
+# ── Email Tracking ─────────────────────────────────────────
+# Set this to your public URL when deployed (e.g. https://yourapp.render.com)
+TRACKING_BASE_URL: str = os.getenv("TRACKING_BASE_URL", "http://localhost:8000")
+
 # ── Pre-configured target markets ─────────────────────────
 DEFAULT_TARGETS = [
-    {"category": "real estate agency", "city": "Dubai", "country": "UAE"},
-    {"category": "cafe", "city": "Montreal", "country": "Canada"},
-    {"category": "restaurant", "city": "Montreal", "country": "Canada"},
+    # Google Maps targets
+    {"platform": "google_maps", "category": "real estate agency", "city": "Dubai", "country": "UAE", "label": "Real Estate — Dubai"},
+    {"platform": "google_maps", "category": "cafe", "city": "Montreal", "country": "Canada", "label": "Cafes — Montreal"},
+    {"platform": "google_maps", "category": "restaurant", "city": "Montreal", "country": "Canada", "label": "Restaurants — Montreal"},
+    # Freelance platform targets
+    {"platform": "upwork", "keyword": "wordpress website", "label": "Upwork — WordPress Jobs"},
+    {"platform": "upwork", "keyword": "web design", "label": "Upwork — Web Design Jobs"},
+    {"platform": "upwork", "keyword": "SEO optimization", "label": "Upwork — SEO Jobs"},
+    {"platform": "freelancer", "keyword": "website design", "label": "Freelancer — Web Design"},
+    {"platform": "freelancer", "keyword": "digital marketing", "label": "Freelancer — Digital Marketing"},
+    # LinkedIn targets
+    {"platform": "linkedin", "keyword": "real estate Dubai", "label": "LinkedIn — Dubai Real Estate"},
+    {"platform": "linkedin", "keyword": "restaurant Montreal", "label": "LinkedIn — Montreal Restaurants"},
+    # Fiverr targets
+    {"platform": "fiverr", "keyword": "web design", "label": "Fiverr — Web Design Buyers"},
+    {"platform": "fiverr", "keyword": "SEO", "label": "Fiverr — SEO Buyers"},
 ]

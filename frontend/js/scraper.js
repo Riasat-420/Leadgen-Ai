@@ -1,7 +1,24 @@
-/* scraper.js — Scraper controls, job monitoring, quick targets */
+/* scraper.js — Scraper controls, job monitoring, quick targets for all platforms */
 
 let _activeJobId   = null;
 let _pollInterval  = null;
+
+// ── Platform icons (Lucide icon names) ────────────────────
+const PLATFORM_ICONS = {
+  google_maps: 'map-pin',
+  upwork:      'briefcase',
+  freelancer:  'code-2',
+  linkedin:    'linkedin',
+  fiverr:      'layers',
+};
+
+const PLATFORM_COLORS = {
+  google_maps: 'var(--primary)',
+  upwork:      'var(--green)',
+  freelancer:  '#FF9119',
+  linkedin:    'var(--cyan)',
+  fiverr:      '#1DBF73',
+};
 
 // ── Load scraper view ─────────────────────────────────────
 async function loadScraper() {
@@ -11,33 +28,102 @@ async function loadScraper() {
 
 async function loadQuickTargets() {
   const el = document.getElementById('quick-targets');
-  const icons = { 'real estate agency': '🏢', 'cafe': '☕', 'restaurant': '🍽️' };
 
   try {
     const targets = await API.getTargets();
-    el.innerHTML = targets.map(t => {
-      const icon = icons[t.category] || '📍';
-      return `
-        <button class="quick-target-btn" onclick="fillScrapeForm('${esc(t.category)}','${esc(t.city)}','${esc(t.country)}')">
-          <span class="quick-target-icon">${icon}</span>
-          <div>
-            <div style="font-weight:600">${esc(t.category)}</div>
-            <div style="font-size:11px;color:var(--text-3)">${esc(t.city)}, ${esc(t.country)}</div>
+
+    // Group by platform
+    const groups = {};
+    for (const t of targets) {
+      const p = t.platform || 'google_maps';
+      if (!groups[p]) groups[p] = [];
+      groups[p].push(t);
+    }
+
+    const platformLabels = {
+      google_maps: 'Google Maps',
+      upwork:      'Upwork',
+      freelancer:  'Freelancer',
+      linkedin:    'LinkedIn',
+      fiverr:      'Fiverr',
+    };
+
+    let html = '';
+    for (const [platform, items] of Object.entries(groups)) {
+      const color = PLATFORM_COLORS[platform] || 'var(--text-2)';
+      const icon  = PLATFORM_ICONS[platform] || 'search';
+      html += `
+        <div class="platform-group">
+          <div class="platform-group-label" style="color:${color}">
+            <i data-lucide="${icon}"></i>
+            ${platformLabels[platform] || platform}
           </div>
-        </button>`;
-    }).join('');
+          <div class="platform-targets">
+            ${items.map(t => {
+              const isGoogleMaps = platform === 'google_maps';
+              const label = t.label || (isGoogleMaps ? `${t.category} — ${t.city}` : t.keyword);
+              const onclickAttr = isGoogleMaps
+                ? `onclick="fillScrapeForm('${esc(t.category)}','${esc(t.city)}','${esc(t.country || '')}')"`
+                : `onclick="fillPlatformForm('${esc(platform)}','${esc(t.keyword || '')}')"`;
+              return `
+                <button class="quick-target-btn" ${onclickAttr}>
+                  <i data-lucide="${icon}" style="color:${color};width:14px;height:14px;flex-shrink:0"></i>
+                  <span style="font-size:12px;font-weight:500">${esc(label)}</span>
+                </button>`;
+            }).join('')}
+          </div>
+        </div>`;
+    }
+
+    el.innerHTML = html;
+    if (window.lucide) lucide.createIcons();
+
   } catch {
     el.innerHTML = '<div class="empty-state" style="padding:8px">Could not load targets</div>';
   }
 }
 
+// ── Fill form helpers ─────────────────────────────────────
 function fillScrapeForm(category, city, country) {
   document.getElementById('scrape-category').value = category;
   document.getElementById('scrape-city').value     = city;
   document.getElementById('scrape-country').value  = country;
+  // Switch to Google Maps tab
+  showScrapeTab('google_maps');
 }
 
-// ── Start scrape job ──────────────────────────────────────
+function fillPlatformForm(platform, keyword) {
+  document.getElementById('platform-select').value  = platform;
+  document.getElementById('platform-keyword').value = keyword;
+  showScrapeTab('platform');
+}
+
+// ── Tab switching (Google Maps vs Platform) ───────────────
+let _activeScrapeTab = 'google_maps';
+
+function showScrapeTab(tab) {
+  _activeScrapeTab = tab;
+  const gmTab = document.getElementById('gm-tab');
+  const plTab = document.getElementById('platform-tab');
+  const gmForm = document.getElementById('gm-form');
+  const plForm = document.getElementById('platform-form');
+
+  if (!gmTab || !plTab) return;
+
+  if (tab === 'google_maps') {
+    gmTab.classList.add('active');
+    plTab.classList.remove('active');
+    gmForm.style.display = 'block';
+    plForm.style.display = 'none';
+  } else {
+    plTab.classList.add('active');
+    gmTab.classList.remove('active');
+    plForm.style.display = 'block';
+    gmForm.style.display = 'none';
+  }
+}
+
+// ── Start Google Maps scrape ──────────────────────────────
 async function startScrape() {
   const category   = document.getElementById('scrape-category').value.trim();
   const city       = document.getElementById('scrape-city').value.trim();
@@ -51,24 +137,57 @@ async function startScrape() {
 
   const btn = document.getElementById('scrape-btn');
   btn.disabled = true;
-  btn.textContent = '⏳ Starting...';
+  btn.innerHTML = '<i data-lucide="loader"></i> Starting...';
+  if (window.lucide) lucide.createIcons();
 
   try {
     const res = await API.startScrape({ category, city, country, max_results: maxResults });
     _activeJobId = res.job_id;
-    toast(`Scrape job started for "${category} in ${city}"`, 'success');
-    showActiveJob(res.job_id, `${category} in ${city}`);
+    toast(`Scrape started for "${category} in ${city}"`, 'success');
+    showActiveJob(res.job_id, `${category} in ${city}`, 'google_maps');
     startPolling(res.job_id);
   } catch (e) {
     toast(e.message, 'error');
   } finally {
     btn.disabled = false;
-    btn.textContent = '🚀 Start Scraping';
+    btn.innerHTML = '<i data-lucide="play"></i> Start Scraping';
+    if (window.lucide) lucide.createIcons();
+  }
+}
+
+// ── Start Platform scrape ─────────────────────────────────
+async function startPlatformScrape() {
+  const platform   = document.getElementById('platform-select').value;
+  const keyword    = document.getElementById('platform-keyword').value.trim();
+  const maxResults = parseInt(document.getElementById('platform-max').value) || 30;
+
+  if (!keyword) {
+    toast('Enter a keyword to search', 'warning');
+    return;
+  }
+
+  const btn = document.getElementById('platform-scrape-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<i data-lucide="loader"></i> Starting...';
+  if (window.lucide) lucide.createIcons();
+
+  try {
+    const res = await API.startPlatformScrape({ platform, keyword, max_results: maxResults });
+    _activeJobId = res.job_id;
+    toast(`${platform} scrape started for "${keyword}"`, 'success');
+    showActiveJob(res.job_id, `[${platform}] ${keyword}`, platform);
+    startPolling(res.job_id);
+  } catch (e) {
+    toast(e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i data-lucide="play"></i> Start Scraping';
+    if (window.lucide) lucide.createIcons();
   }
 }
 
 // ── Active job UI ─────────────────────────────────────────
-function showActiveJob(jobId, query) {
+function showActiveJob(jobId, query, platform) {
   const card = document.getElementById('active-job-card');
   card.style.display = 'block';
   document.getElementById('job-details').textContent = `Job #${jobId} — "${query}"`;
@@ -76,7 +195,14 @@ function showActiveJob(jobId, query) {
   document.getElementById('job-status-badge').className = 'job-status-badge running';
   document.getElementById('progress-bar').style.width = '0%';
   document.getElementById('progress-pct').textContent = '0%';
-  document.getElementById('progress-text').textContent = 'Scraping Google Maps...';
+  const platformLabels = {
+    google_maps: 'Scanning Google Maps...',
+    upwork:      'Scanning Upwork jobs...',
+    freelancer:  'Scanning Freelancer projects...',
+    linkedin:    'Scanning LinkedIn companies...',
+    fiverr:      'Scanning Fiverr gigs...',
+  };
+  document.getElementById('progress-text').textContent = platformLabels[platform] || 'Scraping...';
   document.getElementById('job-found').textContent = '0';
   document.getElementById('job-scanned').textContent = '0';
 }
@@ -93,15 +219,15 @@ function updateJobUI(job) {
   badge.className = `job-status-badge ${job.status}`;
 
   if (job.status === 'completed') {
-    document.getElementById('progress-text').textContent = `✅ Complete! ${job.leads_found} new leads found`;
+    document.getElementById('progress-text').textContent = `Complete — ${job.leads_found} new leads found`;
     document.getElementById('progress-bar').style.width = '100%';
     document.getElementById('progress-pct').textContent = '100%';
-    toast(`Scrape complete — ${job.leads_found} new leads collected! 🎉`, 'success');
+    toast(`Scrape complete — ${job.leads_found} new leads collected!`, 'success');
     stopPolling();
     loadJobs();
   } else if (job.status === 'failed') {
-    document.getElementById('progress-text').textContent = `❌ Failed: ${job.error_message || 'Unknown error'}`;
-    toast('Scrape job failed — check console', 'error');
+    document.getElementById('progress-text').textContent = `Failed: ${job.error_message || 'Unknown error'}`;
+    toast('Scrape job failed', 'error');
     stopPolling();
     loadJobs();
   }
@@ -169,7 +295,7 @@ function jobStatusBadge(status) {
 async function resumeJobView(jobId) {
   const job = await API.scrapeStatus(jobId);
   if (job.status === 'running') {
-    showActiveJob(jobId, job.query);
+    showActiveJob(jobId, job.query, 'google_maps');
     startPolling(jobId);
     updateJobUI(job);
   } else {
