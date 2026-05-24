@@ -49,6 +49,10 @@
       <span class="nav-icon"><i data-lucide="bar-chart-2"></i></span>
       <span>Analytics</span>
     </a>
+    <a href="#" class="nav-item" data-view="api-docs" id="nav-api-docs">
+      <span class="nav-icon"><i data-lucide="book-open"></i></span>
+      <span>API Docs</span>
+    </a>
   </nav>
 
   <div class="sidebar-footer">
@@ -222,9 +226,15 @@
     <div class="card table-card">
       <div class="card-header">
         <h2 class="card-title">All Leads <span class="count-badge" id="leads-count">0</span></h2>
-        <div class="bulk-actions" id="bulk-actions" style="display:none">
+        <div class="bulk-actions" id="bulk-actions" style="display:none; gap: 8px;">
           <button class="btn btn-sm" onclick="bulkAnalyze()">
             <i data-lucide="cpu"></i> Analyze Selected
+          </button>
+          <button class="btn btn-sm" onclick="bulkGenerate()">
+            <i data-lucide="pencil-line"></i> Generate Messages
+          </button>
+          <button class="btn btn-sm btn-outline" onclick="bulkDelete()" style="color:var(--red); border-color:rgba(239, 68, 68, 0.2);">
+            <i data-lucide="trash-2"></i> Delete Selected
           </button>
         </div>
       </div>
@@ -505,6 +515,177 @@
           </h2>
         </div>
         <canvas id="chart-funnel" height="250"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── API DOCS VIEW ────────────────────────────── -->
+  <section class="view" id="view-api-docs">
+    <div class="card" style="padding:24px;">
+      <div style="margin-bottom:24px;">
+        <h2 style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px;display:flex;align-items:center;">
+          <i data-lucide="terminal" style="width:20px;height:20px;display:inline-block;vertical-align:middle;margin-right:8px;color:var(--primary);"></i>
+          Interactive REST API Reference Documentation
+        </h2>
+        <p style="font-size:13px;color:var(--text-3);line-height:1.5;">
+          LeadGen AI provides a powerful, modular REST API. Below are the key endpoints available for managing leads, triggering scraping jobs, starting AI analysis, and tracking email outreach.
+        </p>
+      </div>
+
+      <div class="api-docs-container" style="display:flex;flex-direction:column;gap:1.5rem;">
+        
+        <!-- API Endpoint Section: Leads -->
+        <div class="api-section" style="border-bottom:1px solid var(--border);padding-bottom:1.5rem;">
+          <h3 style="font-size:15px;font-weight:600;color:var(--primary);margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+            <i data-lucide="users" style="width:16px;height:16px;"></i> Leads Management API
+          </h3>
+          
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <!-- GET /api/leads -->
+            <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:12px;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+                <span style="font-size:10px;font-weight:700;color:#06b6d4;background:rgba(6, 182, 212, 0.1);padding:4px 8px;border-radius:4px;text-transform:uppercase;">GET</span>
+                <code style="font-family:monospace;font-size:13px;font-weight:600;color:var(--text)">/api/leads</code>
+                <span style="font-size:12px;color:var(--text-3)">— List and filter collected leads</span>
+              </div>
+              <div style="font-size:12px;color:var(--text-2);margin-bottom:6px;">Query Parameters: <code>status</code>, <code>city</code>, <code>category</code>, <code>source</code>, <code>min_score</code>, <code>search</code>, <code>page</code>, <code>page_size</code>.</div>
+            </div>
+
+            <!-- GET /api/leads/{id} -->
+            <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:12px;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+                <span style="font-size:10px;font-weight:700;color:#06b6d4;background:rgba(6, 182, 212, 0.1);padding:4px 8px;border-radius:4px;text-transform:uppercase;">GET</span>
+                <code style="font-family:monospace;font-size:13px;font-weight:600;color:var(--text)">/api/leads/{id}</code>
+                <span style="font-size:12px;color:var(--text-3)">— Fetch details & outreach history for a lead</span>
+              </div>
+            </div>
+
+            <!-- PATCH /api/leads/{id} -->
+            <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:12px;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+                <span style="font-size:10px;font-weight:700;color:#a855f7;background:rgba(168, 85, 247, 0.1);padding:4px 8px;border-radius:4px;text-transform:uppercase;">PATCH</span>
+                <code style="font-family:monospace;font-size:13px;font-weight:600;color:var(--text)">/api/leads/{id}</code>
+                <span style="font-size:12px;color:var(--text-3)">— Update status, email, or notes</span>
+              </div>
+              <div style="font-size:12px;color:var(--text-2);margin-top:6px;">Payload example:
+                <pre style="background:rgba(0,0,0,0.2);padding:8px;border-radius:6px;font-family:monospace;font-size:11px;color:var(--text-2);margin-top:4px;overflow-x:auto;">{
+  "status": "interested",
+  "email": "contact@business.com",
+  "notes": "Spoke on the phone, requested proposal."
+}</pre>
+              </div>
+            </div>
+
+            <!-- DELETE /api/leads/{id} -->
+            <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:12px;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+                <span style="font-size:10px;font-weight:700;color:var(--red);background:rgba(239, 68, 68, 0.1);padding:4px 8px;border-radius:4px;text-transform:uppercase;">DELETE</span>
+                <code style="font-family:monospace;font-size:13px;font-weight:600;color:var(--text)">/api/leads/{id}</code>
+                <span style="font-size:12px;color:var(--text-3)">— Permanently delete a lead</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- API Endpoint Section: AI Analysis -->
+        <div class="api-section" style="border-bottom:1px solid var(--border);padding-bottom:1.5rem;">
+          <h3 style="font-size:15px;font-weight:600;color:var(--primary);margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+            <i data-lucide="cpu" style="width:16px;height:16px;"></i> AI Intelligence API
+          </h3>
+          
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <!-- POST /api/leads/{id}/analyze -->
+            <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:12px;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+                <span style="font-size:10px;font-weight:700;color:#10b981;background:rgba(16, 185, 129, 0.1);padding:4px 8px;border-radius:4px;text-transform:uppercase;">POST</span>
+                <code style="font-family:monospace;font-size:13px;font-weight:600;color:var(--text)">/api/leads/{id}/analyze</code>
+                <span style="font-size:12px;color:var(--text-3)">— Triggers background website checks, custom scoring, and Gemini AI analysis</span>
+              </div>
+            </div>
+
+            <!-- POST /api/leads/{id}/generate-messages -->
+            <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:12px;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+                <span style="font-size:10px;font-weight:700;color:#10b981;background:rgba(16, 185, 129, 0.1);padding:4px 8px;border-radius:4px;text-transform:uppercase;">POST</span>
+                <code style="font-family:monospace;font-size:13px;font-weight:600;color:var(--text)">/api/leads/{id}/generate-messages</code>
+                <span style="font-size:12px;color:var(--text-3)">— Generates custom outreach pitches, WhatsApp messages, and multi-step follow-ups using Gemini</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- API Endpoint Section: Scraper -->
+        <div class="api-section" style="border-bottom:1px solid var(--border);padding-bottom:1.5rem;">
+          <h3 style="font-size:15px;font-weight:600;color:var(--primary);margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+            <i data-lucide="scan-search" style="width:16px;height:16px;"></i> Scraper Engines API
+          </h3>
+          
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <!-- POST /api/scrape/google-maps -->
+            <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:12px;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+                <span style="font-size:10px;font-weight:700;color:#10b981;background:rgba(16, 185, 129, 0.1);padding:4px 8px;border-radius:4px;text-transform:uppercase;">POST</span>
+                <code style="font-family:monospace;font-size:13px;font-weight:600;color:var(--text)">/api/scrape/google-maps</code>
+                <span style="font-size:12px;color:var(--text-3)">— Start Google Maps local crawler (extracts ratings, SSL, emails, speed metrics)</span>
+              </div>
+            </div>
+
+            <!-- POST /api/scrape/upwork -->
+            <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:12px;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+                <span style="font-size:10px;font-weight:700;color:#10b981;background:rgba(16, 185, 129, 0.1);padding:4px 8px;border-radius:4px;text-transform:uppercase;">POST</span>
+                <code style="font-family:monospace;font-size:13px;font-weight:600;color:var(--text)">/api/scrape/upwork</code>
+                <span style="font-size:12px;color:var(--text-3)">— Trigger Upwork job scraper based on keywords & budgets</span>
+              </div>
+            </div>
+
+            <!-- Other Platforms -->
+            <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:12px;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+                <span style="font-size:10px;font-weight:700;color:#10b981;background:rgba(16, 185, 129, 0.1);padding:4px 8px;border-radius:4px;text-transform:uppercase;">POST</span>
+                <code style="font-family:monospace;font-size:13px;font-weight:600;color:var(--text)">/api/scrape/[freelancer | linkedin | fiverr]</code>
+                <span style="font-size:12px;color:var(--text-3)">— Triggers Freelancer projects, LinkedIn company pages, or Fiverr demand scrapers</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- API Endpoint Section: Outreach Tracking -->
+        <div class="api-section">
+          <h3 style="font-size:15px;font-weight:600;color:var(--primary);margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+            <i data-lucide="send" style="width:16px;height:16px;"></i> Outreach & Tracking API
+          </h3>
+          
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <!-- POST /api/outreach/send -->
+            <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:12px;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+                <span style="font-size:10px;font-weight:700;color:#10b981;background:rgba(16, 185, 129, 0.1);padding:4px 8px;border-radius:4px;text-transform:uppercase;">POST</span>
+                <code style="font-family:monospace;font-size:13px;font-weight:600;color:var(--text)">/api/outreach/send</code>
+                <span style="font-size:12px;color:var(--text-3)">— Delivers email, registers open pixel, and generates uuid redirect urls</span>
+              </div>
+            </div>
+
+            <!-- GET /api/track/open/{tracking_id} -->
+            <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:12px;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+                <span style="font-size:10px;font-weight:700;color:#06b6d4;background:rgba(6, 182, 212, 0.1);padding:4px 8px;border-radius:4px;text-transform:uppercase;">GET</span>
+                <code style="font-family:monospace;font-size:13px;font-weight:600;color:var(--text)">/api/track/open/{tracking_id}</code>
+                <span style="font-size:12px;color:var(--text-3)">— Serves 1x1 tracking pixel and increments open_count</span>
+              </div>
+            </div>
+
+            <!-- GET /api/track/click/{tracking_id} -->
+            <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:12px;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+                <span style="font-size:10px;font-weight:700;color:#06b6d4;background:rgba(6, 182, 212, 0.1);padding:4px 8px;border-radius:4px;text-transform:uppercase;">GET</span>
+                <code style="font-family:monospace;font-size:13px;font-weight:600;color:var(--text)">/api/track/click/{tracking_id}?url=...</code>
+                <span style="font-size:12px;color:var(--text-3)">— Logs link clicks and redirects lead securely to encoded destination url</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   </section>

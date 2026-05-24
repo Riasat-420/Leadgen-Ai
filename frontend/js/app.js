@@ -25,6 +25,7 @@ function showView(name) {
     scraper:   ['Scraper',    'Launch Google Maps scraping jobs'],
     outreach:  ['Outreach',   'Send emails and track replies'],
     analytics: ['Analytics',  'Performance charts and insights'],
+    'api-docs':['API Docs',   'Interactive and beautiful API Reference Documentation'],
   };
 
   const [title, sub] = titles[name] || ['—', ''];

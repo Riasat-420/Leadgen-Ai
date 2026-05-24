@@ -188,7 +188,41 @@ async function bulkAnalyze() {
     try { await API.analyzeLead(id); done++; } catch {}
     await new Promise(r => setTimeout(r, 500));
   }
-  toast(`Queued analysis for ${done} leads`, 'success');
+  toast(`Queued analysis for ${done} leads. Refresh in ~30s.`, 'success');
+}
+
+async function bulkGenerate() {
+  const ids = [...document.querySelectorAll('.lead-cb:checked')].map(cb => Number(cb.value));
+  if (!ids.length) return;
+
+  toast(`Generating messages for ${ids.length} leads...`, 'info');
+  let done = 0;
+  for (const id of ids) {
+    try { await API.generateMessages(id); done++; } catch {}
+    await new Promise(r => setTimeout(r, 500));
+  }
+  toast(`Queued message generation for ${done} leads. Refresh in ~15s.`, 'success');
+}
+
+async function bulkDelete() {
+  const ids = [...document.querySelectorAll('.lead-cb:checked')].map(cb => Number(cb.value));
+  if (!ids.length) return;
+
+  if (!confirm(`Are you sure you want to permanently delete the ${ids.length} selected leads?`)) return;
+
+  toast(`Deleting ${ids.length} leads...`, 'warning');
+  let done = 0;
+  for (const id of ids) {
+    try { await API.deleteLead(id); done++; } catch {}
+  }
+  toast(`Successfully deleted ${done} leads`, 'success');
+  
+  // Uncheck select all
+  const selectAll = document.getElementById('select-all');
+  if (selectAll) selectAll.checked = false;
+  
+  onCheckboxChange();
+  loadLeads(_leadsPage);
 }
 
 // Filter: search on Enter
