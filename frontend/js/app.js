@@ -41,13 +41,7 @@ function showView(name) {
   }
 }
 
-// Wire nav clicks
-document.querySelectorAll('.nav-item').forEach(item => {
-  item.addEventListener('click', e => {
-    e.preventDefault();
-    showView(item.dataset.view);
-  });
-});
+
 
 // ── Toast Notifications ───────────────────────────────────
 function toast(message, type = 'info', duration = 3500) {
@@ -411,7 +405,6 @@ function renderLeadModal(lead) {
   `;
   if (window.lucide) lucide.createIcons();
 }
-}
 
 function switchTab(btn, tabId) {
   btn.closest('.modal-section').querySelectorAll('.msg-tab').forEach(t => t.classList.remove('active'));
@@ -574,6 +567,14 @@ function renderCharts(data) {
 
 // ── Init ──────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+  // Wire nav clicks
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', e => {
+      e.preventDefault();
+      showView(item.dataset.view);
+    });
+  });
+
   showView('dashboard');
 
   // Check API health
