@@ -154,6 +154,12 @@ def _save_lead(db, data: dict) -> bool:
     if existing:
         return False
 
+    if data.get("email"):
+        existing_email = db.query(Lead).filter(Lead.email == data["email"]).first()
+        if existing_email:
+            print(f"[Scraper] Duplicate lead email found: {data['email']}. Skipping.")
+            return False
+
     lead = Lead(**data)
     db.add(lead)
     db.commit()

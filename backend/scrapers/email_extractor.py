@@ -39,15 +39,52 @@ JUNK_PATTERNS = re.compile(
 CONTACT_PATHS = ["/contact", "/contact-us", "/about", "/about-us", "/reach-us", "/get-in-touch"]
 
 
+def decode_cloudflare_email(cfemail: str) -> str:
+    """Decode a Cloudflare hex-obfuscated email address."""
+    try:
+        k = int(cfemail[:2], 16)
+        return "".join(
+            chr(int(cfemail[i:i+2], 16) ^ k)
+            for i in range(2, len(cfemail), 2)
+        )
+    except Exception:
+        return ""
+
+
 def _extract_emails_from_html(html: str) -> list[str]:
     """Extract and clean email addresses from raw HTML."""
-    # Unescape HTML entities
-    html = html.replace("&#64;", "@").replace("%40", "@").replace("&#46;", ".")
+    # De-obfuscate common text layouts
+    html_clean = (
+        html.replace("&#64;", "@")
+        .replace("%40", "@")
+        .replace("&#46;", ".")
+        .replace(" [at] ", "@")
+        .replace(" (at) ", "@")
+        .replace("[at]", "@")
+        .replace("(at)", "@")
+        .replace(" [dot] ", ".")
+        .replace(" (dot) ", ".")
+        .replace("[dot]", ".")
+        .replace("(dot)", ".")
+    )
 
-    # Parse mailto links first (highest quality)
-    soup = BeautifulSoup(html, "lxml")
+    soup = BeautifulSoup(html_clean, "lxml")
     emails = []
 
+    # 1. Parse Cloudflare-obfuscated emails
+    for el in soup.find_all(attrs={"data-cfemail": True}):
+        decoded = decode_cloudflare_email(el["data-cfemail"])
+        if decoded and EMAIL_PATTERN.match(decoded):
+            emails.append(decoded.lower().strip())
+
+    for el in soup.select(".__cf_email__"):
+        cf = el.get("data-cfemail")
+        if cf:
+            decoded = decode_cloudflare_email(cf)
+            if decoded and EMAIL_PATTERN.match(decoded):
+                emails.append(decoded.lower().strip())
+
+    # 2. Parse mailto links (highest quality)
     for a in soup.find_all("a", href=True):
         href = a["href"]
         if href.startswith("mailto:"):
@@ -55,8 +92,8 @@ def _extract_emails_from_html(html: str) -> list[str]:
             if email and EMAIL_PATTERN.match(email):
                 emails.append(email)
 
-    # Then scan full HTML text for email patterns
-    raw_emails = EMAIL_PATTERN.findall(html)
+    # 3. Scan full cleaned HTML text for email patterns
+    raw_emails = EMAIL_PATTERN.findall(html_clean)
     for e in raw_emails:
         emails.append(e.lower().strip())
 
@@ -123,6 +160,7 @@ def extract_emails_from_website(url: Optional[str], timeout: int = 10) -> Option
         timeout=timeout,
         follow_redirects=True,
         headers=HEADERS,
+        verify=False,
     ) as client:
         for page_url in pages_to_check:
             try:
