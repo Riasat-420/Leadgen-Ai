@@ -126,6 +126,7 @@ function showScrapeTab(tab) {
 // ── Start Google Maps scrape ──────────────────────────────
 async function startScrape() {
   const category   = document.getElementById('scrape-category').value.trim();
+  const keywords   = document.getElementById('scrape-keywords').value.trim();
   const city       = document.getElementById('scrape-city').value.trim();
   const country    = document.getElementById('scrape-country').value.trim() || 'Unknown';
   const maxResults = parseInt(document.getElementById('scrape-max').value) || 30;
@@ -141,10 +142,11 @@ async function startScrape() {
   if (window.lucide) lucide.createIcons();
 
   try {
-    const res = await API.startScrape({ category, city, country, max_results: maxResults });
+    const res = await API.startScrape({ category, keywords, city, country, max_results: maxResults });
     _activeJobId = res.job_id;
-    toast(`Scrape started for "${category} in ${city}"`, 'success');
-    showActiveJob(res.job_id, `${category} in ${city}`, 'google_maps');
+    const qStr = keywords ? `${category} ${keywords} in ${city}` : `${category} in ${city}`;
+    toast(`Scrape started for "${qStr}"`, 'success');
+    showActiveJob(res.job_id, qStr, 'google_maps');
     startPolling(res.job_id);
   } catch (e) {
     toast(e.message, 'error');

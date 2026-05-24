@@ -14,10 +14,11 @@ async function loadLeads(page = 1) {
     city:      document.getElementById('filter-city')?.value   || '',
     min_score: document.getElementById('filter-score')?.value  || '',
     search:    document.getElementById('lead-search')?.value   || '',
+    source:    document.getElementById('filter-source')?.value   || '',
   };
 
   const tbody = document.getElementById('leads-tbody');
-  tbody.innerHTML = '<tr><td colspan="9" class="empty-state">Loading...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="10" class="empty-state">Loading...</td></tr>';
 
   try {
     const data = await API.getLeads(params);
@@ -27,7 +28,7 @@ async function loadLeads(page = 1) {
     document.getElementById('badge-leads').textContent = data.total;
 
     if (!data.leads || data.leads.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="9" class="empty-state">
+      tbody.innerHTML = `<tr><td colspan="10" class="empty-state">
         No leads found. Run the scraper to collect some!
       </td></tr>`;
       document.getElementById('leads-pagination').innerHTML = '';
@@ -49,6 +50,7 @@ async function loadLeads(page = 1) {
         </td>
         <td>${esc(lead.city || '—')}</td>
         <td><span style="font-size:11px;color:var(--text-3)">${esc(lead.category || '—')}</span></td>
+        <td><span style="font-size:12px;font-weight:500;color:var(--primary);word-break:break-all">${esc(lead.email || '—')}</span></td>
         <td>${scoreBadge(lead.lead_score)}</td>
         <td>
           ${lead.google_rating

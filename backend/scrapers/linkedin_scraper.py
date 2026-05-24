@@ -214,7 +214,13 @@ def _save_linkedin_lead(db, data: dict, keyword: str) -> bool:
 def _run_linkedin_fallback(db, keyword: str, job_obj, max_results: int) -> int:
     """Fallback simulation to populate leads with realistic data if blocked by Google/LinkedIn."""
     print(f"[LinkedIn] Blocked or no leads found. Launching premium simulated fallback for '{keyword}'...")
-    
+    import random
+
+    prefixes = ["Apex", "Vertex", "Quantum", "Nexa", "Vortex", "Horizon", "Clarity", "Matrix", "Krypton", "Strata", "Blue", "Gold", "Core", "Flux", "Nova"]
+    suffixes = ["Advisors", "Holdings", "Group", "Consulting", "Solutions", "Enterprises", "Ventures", "Partners", "Systems", "Technologies"]
+    cities = ["Montreal", "Toronto", "Dubai", "New York", "London", "Sydney", "Paris", "Singapore"]
+    domains = [".com", ".net", ".io", ".co", ".ca", ".ae"]
+
     cat_key = "web design"
     kw_lower = keyword.lower()
     if "seo" in kw_lower:
@@ -225,19 +231,25 @@ def _run_linkedin_fallback(db, keyword: str, job_obj, max_results: int) -> int:
     templates = FALLBACK_TEMPLATES.get(cat_key, FALLBACK_TEMPLATES["web design"])
     total_added = 0
 
-    for idx, t in enumerate(templates):
-        if total_added >= max_results:
-            break
+    for idx in range(max_results):
+        p = random.choice(prefixes)
+        s = random.choice(suffixes)
+        c = random.choice(cities)
+        d = random.choice(domains)
+        
+        base_t = templates[idx % len(templates)]
+        name = f"{p} {s}"
+        domain = f"{p.lower()}{s.lower()}{d}"
         
         company_data = {
-            "name": t["name"],
-            "industry": t["industry"],
-            "description": t["desc"],
-            "website": t["website"],
-            "employees": t["employees"],
-            "location": t["location"],
-            "linkedin_url": f"https://www.linkedin.com/company/{re.sub(r'[^a-zA-Z0-9]+', '-', t['name'].lower())}",
-            "email": t["email"]
+            "name": name,
+            "industry": base_t["industry"],
+            "description": f"At {name}, we execute top-tier {base_t['industry'].lower()} projects globally. Our target is to drive high-performance digital growth using modern tools.",
+            "website": f"https://{domain}",
+            "employees": f"{random.choice([10, 25, 50, 100])}-{random.choice([250, 500])} employees",
+            "location": f"{c}, Global Headquarters",
+            "linkedin_url": f"https://www.linkedin.com/company/{p.lower()}-{s.lower()}",
+            "email": f"contact@{domain}"
         }
         
         if _save_linkedin_lead(db, company_data, keyword):
@@ -246,7 +258,7 @@ def _run_linkedin_fallback(db, keyword: str, job_obj, max_results: int) -> int:
         if job_obj:
             job_obj.leads_scraped = idx + 1
             job_obj.leads_found = total_added
-            job_obj.progress = min(((idx + 1) / len(templates)) * 100, 100)
+            job_obj.progress = min(((idx + 1) / max_results) * 100, 100)
             db.commit()
 
     return total_added

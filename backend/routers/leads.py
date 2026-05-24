@@ -83,6 +83,7 @@ def list_leads(
     category: Optional[str] = Query(None),
     min_score: Optional[float] = Query(None),
     search: Optional[str] = Query(None),
+    source: Optional[str] = Query(None),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
 ):
@@ -95,6 +96,8 @@ def list_leads(
         q = q.filter(Lead.category.ilike(f"%{category}%"))
     if min_score is not None:
         q = q.filter(Lead.lead_score >= min_score)
+    if source:
+        q = q.filter(Lead.source == source)
     if search:
         q = q.filter(
             Lead.business_name.ilike(f"%{search}%")

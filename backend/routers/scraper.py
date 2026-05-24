@@ -25,6 +25,7 @@ class ScrapeRequest(BaseModel):
     category: str
     city: str
     country: Optional[str] = "Unknown"
+    keywords: Optional[str] = ""
     max_results: Optional[int] = DEFAULT_MAX_RESULTS
 
 
@@ -69,7 +70,7 @@ def _run_google_maps_sync(job_id: int, query: str, city: str, category: str,
 @router.post("/start")
 def start_scrape(req: ScrapeRequest, background_tasks: BackgroundTasks,
                  db: Session = Depends(get_db)):
-    query = f"{req.category} in {req.city}"
+    query = f"{req.category} {req.keywords} in {req.city}" if req.keywords else f"{req.category} in {req.city}"
 
     job = ScrapeJob(
         query=query,

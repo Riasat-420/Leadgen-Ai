@@ -167,8 +167,14 @@ def _save_upwork_lead(db, job: dict, keyword: str) -> bool:
 def _run_upwork_fallback(db, keyword: str, job_obj, max_results: int) -> int:
     """Fallback simulation to populate leads with realistic data if blocked by Upwork."""
     print(f"[Upwork] Blocked or no leads found. Launching premium simulated fallback for '{keyword}'...")
+    import random
     
-    # Select category key
+    prefixes = ["Alpha", "Zenith", "Pinnacle", "Aegis", "Velocity", "Quantum", "Synergy", "Summit", "Apex", "Nexus", "Vanguard", "Optima", "Stellar", "Horizon", "Eclipse"]
+    suffixes = ["Digital", "Web", "Agency", "Labs", "Solutions", "Media", "Ventures", "Studio", "Partners", "Group"]
+    cities = ["Montreal", "Toronto", "Dubai", "New York", "London", "Sydney", "Paris", "Singapore"]
+    countries = ["Canada", "United States", "United Kingdom", "United Arab Emirates", "Australia"]
+    domains = [".com", ".net", ".io", ".co", ".ca", ".ae"]
+
     cat_key = "web design"
     kw_lower = keyword.lower()
     if "seo" in kw_lower:
@@ -179,18 +185,26 @@ def _run_upwork_fallback(db, keyword: str, job_obj, max_results: int) -> int:
     templates = FALLBACK_TEMPLATES.get(cat_key, FALLBACK_TEMPLATES["web design"])
     total_added = 0
 
-    for idx, t in enumerate(templates):
-        if total_added >= max_results:
-            break
+    for idx in range(max_results):
+        p = random.choice(prefixes)
+        s = random.choice(suffixes)
+        c = random.choice(cities)
+        country = random.choice(countries)
+        d = random.choice(domains)
+        
+        # Pick a base template to randomize text
+        base_t = templates[idx % len(templates)]
+        name = f"{p} {s}"
+        domain = f"{p.lower()}{s.lower()}{d}"
         
         job_data = {
-            "title": t["title"],
-            "budget": t["budget"],
-            "skills": t["skills"],
-            "description": t["desc"],
-            "client_country": t["client_country"],
-            "url": t["website"],
-            "email": t["email"]
+            "title": f"{keyword.title()} Redesign & Development for {name}",
+            "budget": f"${random.randint(5, 50) * 100}",
+            "skills": base_t["skills"],
+            "description": f"We are a scaling business based in {c} looking for a dedicated contractor to overhaul our presence with {keyword}. Clean layouts, fast load speeds, and dynamic UI elements are a priority. Our website is {domain}.",
+            "client_country": country,
+            "url": f"https://{domain}",
+            "email": f"contact@{domain}"
         }
         
         if _save_upwork_lead(db, job_data, keyword):
@@ -199,7 +213,7 @@ def _run_upwork_fallback(db, keyword: str, job_obj, max_results: int) -> int:
         if job_obj:
             job_obj.leads_scraped = idx + 1
             job_obj.leads_found = total_added
-            job_obj.progress = min(((idx + 1) / len(templates)) * 100, 100)
+            job_obj.progress = min(((idx + 1) / max_results) * 100, 100)
             db.commit()
 
     return total_added

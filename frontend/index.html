@@ -199,6 +199,14 @@
         <option value="Dubai">Dubai</option>
         <option value="Montreal">Montreal</option>
       </select>
+      <select class="filter-select" id="filter-source">
+        <option value="">All Platforms</option>
+        <option value="google_maps">Google Maps</option>
+        <option value="upwork">Upwork</option>
+        <option value="freelancer">Freelancer</option>
+        <option value="linkedin">LinkedIn</option>
+        <option value="fiverr">Fiverr</option>
+      </select>
       <select class="filter-select" id="filter-score">
         <option value="">Any Score</option>
         <option value="7">Hot (7+)</option>
@@ -228,6 +236,7 @@
               <th>Business</th>
               <th>City</th>
               <th>Category</th>
+              <th>Email</th>
               <th>Score</th>
               <th>Rating</th>
               <th>Website</th>
@@ -236,7 +245,7 @@
             </tr>
           </thead>
           <tbody id="leads-tbody">
-            <tr><td colspan="9" class="empty-state">Loading leads...</td></tr>
+            <tr><td colspan="10" class="empty-state">Loading leads...</td></tr>
           </tbody>
         </table>
       </div>
@@ -278,6 +287,10 @@
             <div class="form-group">
               <label class="form-label" for="scrape-category">Business Category</label>
               <input type="text" id="scrape-category" class="form-input" placeholder="e.g. real estate agency, cafe, restaurant" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="scrape-keywords">Search Keywords (Optional)</label>
+              <input type="text" id="scrape-keywords" class="form-input" placeholder="e.g. luxury, boutique, local" />
             </div>
             <div class="form-group">
               <label class="form-label" for="scrape-city">City</label>
