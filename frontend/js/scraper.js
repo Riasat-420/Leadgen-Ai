@@ -93,7 +93,12 @@ function fillScrapeForm(category, city, country) {
 }
 
 function fillPlatformForm(platform, keyword) {
-  document.getElementById('platform-select').value  = platform;
+  // Uncheck all checkboxes first
+  document.querySelectorAll('.scrape-platform-cb').forEach(cb => cb.checked = false);
+  // Check the one corresponding to the platform
+  const cb = document.querySelector(`.scrape-platform-cb[value="${platform}"]`);
+  if (cb) cb.checked = true;
+  
   document.getElementById('platform-keyword').value = keyword;
   showScrapeTab('platform');
 }
@@ -138,7 +143,7 @@ async function startScrape() {
 
   const btn = document.getElementById('scrape-btn');
   btn.disabled = true;
-  btn.innerHTML = '<i data-lucide="loader"></i> Starting...';
+  btn.innerHTML = '<i data-lucide="loader" style="width:14px;height:14px;display:inline-block;vertical-align:middle;animation:spin 1s infinite linear;"></i> Starting...';
   if (window.lucide) lucide.createIcons();
 
   try {
@@ -152,17 +157,22 @@ async function startScrape() {
     toast(e.message, 'error');
   } finally {
     btn.disabled = false;
-    btn.innerHTML = '<i data-lucide="play"></i> Start Scraping';
+    btn.innerHTML = '<i data-lucide="play" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i> Start Scraping';
     if (window.lucide) lucide.createIcons();
   }
 }
 
 // ── Start Platform scrape ─────────────────────────────────
 async function startPlatformScrape() {
-  const platform   = document.getElementById('platform-select').value;
+  const checkedBoxes = document.querySelectorAll('.scrape-platform-cb:checked');
+  const platforms = [...checkedBoxes].map(cb => cb.value);
   const keyword    = document.getElementById('platform-keyword').value.trim();
   const maxResults = parseInt(document.getElementById('platform-max').value) || 30;
 
+  if (platforms.length === 0) {
+    toast('Select at least one platform to scrape', 'warning');
+    return;
+  }
   if (!keyword) {
     toast('Enter a keyword to search', 'warning');
     return;
@@ -170,28 +180,49 @@ async function startPlatformScrape() {
 
   const btn = document.getElementById('platform-scrape-btn');
   btn.disabled = true;
-  btn.innerHTML = '<i data-lucide="loader"></i> Starting...';
+  btn.innerHTML = '<i data-lucide="loader" style="width:14px;height:14px;display:inline-block;vertical-align:middle;animation:spin 1s infinite linear;"></i> Starting...';
   if (window.lucide) lucide.createIcons();
 
+  toast(`Launching scraper for ${platforms.length} platforms...`, 'info');
+
   try {
-    const res = await API.startPlatformScrape({ platform, keyword, max_results: maxResults });
-    _activeJobId = res.job_id;
-    toast(`${platform} scrape started for "${keyword}"`, 'success');
-    showActiveJob(res.job_id, `[${platform}] ${keyword}`, platform);
-    startPolling(res.job_id);
+    let lastJobId = null;
+    let successCount = 0;
+    
+    // Launch parallel requests to the FastAPI backend scraper router
+    for (const p of platforms) {
+      try {
+        const res = await API.startPlatformScrape({ platform: p, keyword, max_results: maxResults });
+        lastJobId = res.job_id;
+        successCount++;
+      } catch (err) {
+        console.error(`Failed to launch scrape for ${p}:`, err);
+      }
+    }
+    
+    if (successCount > 0) {
+      _activeJobId = lastJobId;
+      toast(`Launched scrapers for ${successCount}/${platforms.length} platforms!`, 'success');
+      const activePlatform = platforms[platforms.length - 1];
+      showActiveJob(lastJobId, `[Multi] ${keyword}`, activePlatform);
+      startPolling(lastJobId);
+    } else {
+      throw new Error('All platform scrape requests failed');
+    }
   } catch (e) {
     toast(e.message, 'error');
   } finally {
     btn.disabled = false;
-    btn.innerHTML = '<i data-lucide="play"></i> Start Scraping';
+    btn.innerHTML = '<i data-lucide="play" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i> Start Scraping Platforms';
     if (window.lucide) lucide.createIcons();
   }
 }
 
 // ── Active job UI ─────────────────────────────────────────
 function showActiveJob(jobId, query, platform) {
-  const card = document.getElementById('active-job-card');
-  card.style.display = 'block';
+  document.getElementById('job-idle-view').style.display = 'none';
+  document.getElementById('job-active-view').style.display = 'flex';
+
   document.getElementById('job-details').textContent = `Job #${jobId} — "${query}"`;
   document.getElementById('job-status-badge').textContent = 'Running';
   document.getElementById('job-status-badge').className = 'job-status-badge running';
@@ -210,6 +241,9 @@ function showActiveJob(jobId, query, platform) {
 }
 
 function updateJobUI(job) {
+  document.getElementById('job-idle-view').style.display = 'none';
+  document.getElementById('job-active-view').style.display = 'flex';
+
   const pct = Math.round(job.progress || 0);
   document.getElementById('progress-bar').style.width = pct + '%';
   document.getElementById('progress-pct').textContent = pct + '%';
@@ -248,10 +282,6 @@ function startPolling(jobId) {
   }, 3000);
 }
 
-function stopPolling() {
-  if (_pollInterval) { clearInterval(_pollInterval); _pollInterval = null; }
-}
-
 // ── Job history table ─────────────────────────────────────
 async function loadJobs() {
   const tbody = document.getElementById('jobs-tbody');
@@ -270,7 +300,7 @@ async function loadJobs() {
           <td style="color:var(--text-3)">#${job.id}</td>
           <td>
             <div style="font-size:13px;font-weight:600;color:var(--text)">${esc(job.query)}</div>
-            <div style="font-size:11px;color:var(--text-3)">${esc(job.city)}, ${esc(job.country || '')}</div>
+            <div style="font-size:11px;color:var(--text-3)">${esc(job.city || 'Remote')}, ${esc(job.country || 'Global')}</div>
           </td>
           <td>${jobStatusBadge(job.status)}</td>
           <td><strong style="color:var(--text)">${job.leads_found || 0}</strong> <span style="color:var(--text-3)">new</span></td>
@@ -301,9 +331,13 @@ async function resumeJobView(jobId) {
     startPolling(jobId);
     updateJobUI(job);
   } else {
-    const card = document.getElementById('active-job-card');
-    card.style.display = 'block';
+    document.getElementById('job-idle-view').style.display = 'none';
+    document.getElementById('job-active-view').style.display = 'flex';
     document.getElementById('job-details').textContent = `Job #${jobId} — "${job.query}"`;
     updateJobUI(job);
   }
+}
+
+function stopPolling() {
+  if (_pollInterval) { clearInterval(_pollInterval); _pollInterval = null; }
 }

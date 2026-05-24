@@ -275,9 +275,9 @@
   <!-- ── SCRAPER VIEW ───────────────────────────────── -->
   <section class="view" id="view-scraper">
 
-    <div class="scraper-grid">
-      <!-- Launch Panel -->
-      <div class="card scraper-panel">
+    <div class="scraper-grid" style="display:grid;grid-template-columns:1.1fr 1fr;gap:20px;align-items:start;">
+      <!-- Left Pane: Launch Panel Card -->
+      <div class="card scraper-panel" style="margin:0;">
         <div class="card-header">
           <h2 class="card-title">
             <i data-lucide="scan-search"></i> Launch Scraper
@@ -292,15 +292,7 @@
             </button>
           </div>
         </div>
-        <div class="scraper-form">
-          <div class="form-group">
-            <label class="form-label">Quick Targets</label>
-            <div class="quick-targets" id="quick-targets">
-              <!-- Populated from /api/scrape/targets -->
-            </div>
-          </div>
-          <div class="form-divider">or custom search</div>
-
+        <div class="scraper-form" style="padding:20px;">
           <!-- Google Maps form -->
           <div id="gm-form">
             <div class="form-group">
@@ -328,52 +320,89 @@
             </button>
           </div>
 
-          <!-- Platform form (Upwork / Freelancer / LinkedIn / Fiverr) -->
+          <!-- Platform form (Upwork / Freelancer / LinkedIn / Fiverr Checkboxes) -->
           <div id="platform-form" style="display:none">
             <div class="form-group">
-              <label class="form-label" for="platform-select">Platform</label>
-              <select id="platform-select" class="form-input filter-select" style="width:100%">
-                <option value="upwork">Upwork — Job Listings</option>
-                <option value="freelancer">Freelancer.com — Projects</option>
-                <option value="linkedin">LinkedIn — Company Pages</option>
-                <option value="fiverr">Fiverr — Buyer Demand</option>
-              </select>
+              <label class="form-label" style="margin-bottom:8px;display:block;">Select Platforms (Check one or more)</label>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <label style="display:flex;align-items:center;gap:8px;background:rgba(0,0,0,0.15);border:1px solid var(--border);padding:8px 12px;border-radius:6px;cursor:pointer;font-size:12.5px;font-weight:500;margin:0;">
+                  <input type="checkbox" class="scrape-platform-cb" value="upwork" checked style="margin:0;width:14px;height:14px;accent-color:var(--primary);" />
+                  <span>Upwork Jobs</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;background:rgba(0,0,0,0.15);border:1px solid var(--border);padding:8px 12px;border-radius:6px;cursor:pointer;font-size:12.5px;font-weight:500;margin:0;">
+                  <input type="checkbox" class="scrape-platform-cb" value="freelancer" checked style="margin:0;width:14px;height:14px;accent-color:var(--primary);" />
+                  <span>Freelancer Projects</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;background:rgba(0,0,0,0.15);border:1px solid var(--border);padding:8px 12px;border-radius:6px;cursor:pointer;font-size:12.5px;font-weight:500;margin:0;">
+                  <input type="checkbox" class="scrape-platform-cb" value="linkedin" style="margin:0;width:14px;height:14px;accent-color:var(--primary);" />
+                  <span>LinkedIn Pages</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;background:rgba(0,0,0,0.15);border:1px solid var(--border);padding:8px 12px;border-radius:6px;cursor:pointer;font-size:12.5px;font-weight:500;margin:0;">
+                  <input type="checkbox" class="scrape-platform-cb" value="fiverr" style="margin:0;width:14px;height:14px;accent-color:var(--primary);" />
+                  <span>Fiverr Sellers</span>
+                </label>
+              </div>
             </div>
             <div class="form-group">
               <label class="form-label" for="platform-keyword">Search Keyword</label>
               <input type="text" id="platform-keyword" class="form-input" placeholder="e.g. web design, SEO, WordPress" />
             </div>
             <div class="form-group">
-              <label class="form-label" for="platform-max">Max Results</label>
+              <label class="form-label" for="platform-max">Max Results (Per Platform)</label>
               <input type="number" id="platform-max" class="form-input" value="30" min="5" max="100" />
             </div>
             <button class="btn btn-primary btn-full" id="platform-scrape-btn" onclick="startPlatformScrape()">
-              <i data-lucide="play"></i> Start Scraping
+              <i data-lucide="play"></i> Start Scraping Platforms
             </button>
           </div>
         </div>
       </div>
 
-      <!-- Active Job Panel -->
-      <div class="card" id="active-job-card" style="display:none">
-        <div class="card-header">
-          <h2 class="card-title">
-            <i data-lucide="loader"></i> Active Job
-          </h2>
-          <span class="job-status-badge running" id="job-status-badge">Running</span>
+      <!-- Right Pane: Quick Targets & Active Progress Card -->
+      <div style="display:flex;flex-direction:column;gap:20px;">
+        <!-- Quick Targets -->
+        <div class="card" style="margin:0;padding:20px;">
+          <div class="card-header" style="padding:0 0 12px;border-bottom:1px solid var(--border);margin-bottom:12px;">
+            <h2 class="card-title" style="font-size:14px;font-weight:600;">
+              <i data-lucide="zap" style="color:var(--primary);width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:4px;"></i> Quick Launch Targets
+            </h2>
+          </div>
+          <div class="quick-targets" id="quick-targets" style="max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">
+            <!-- Populated dynamically -->
+          </div>
         </div>
-        <div class="job-details" id="job-details"></div>
-        <div class="progress-section">
-          <div class="progress-label">
-            <span id="progress-text">Scraping...</span>
-            <span id="progress-pct">0%</span>
+
+        <!-- Scraper Status / Active Job Panel -->
+        <div class="card" id="active-job-card" style="margin:0;padding:20px;">
+          <div class="card-header" style="padding:0 0 12px;border-bottom:1px solid var(--border);margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
+            <h2 class="card-title" style="font-size:14px;font-weight:600;">
+              <i data-lucide="loader" style="color:var(--cyan);width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:4px;"></i> Scraper Status
+            </h2>
+            <span class="job-status-badge completed" id="job-status-badge">Idle</span>
           </div>
-          <div class="progress-bar-track">
-            <div class="progress-bar-fill" id="progress-bar"></div>
+          
+          <!-- Idle view -->
+          <div id="job-idle-view" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 16px;text-align:center;color:var(--text-3);gap:8px;">
+            <i data-lucide="scan" style="width:28px;height:28px;opacity:0.3;"></i>
+            <span style="font-size:12px;">No active scraper job running.<br>Select a target or configure a search to start.</span>
           </div>
-          <div class="progress-stats">
-            <span>Found: <strong id="job-found">0</strong> new leads</span>
-            <span>Scanned: <strong id="job-scanned">0</strong> businesses</span>
+
+          <!-- Active details -->
+          <div id="job-active-view" style="display:none;flex-direction:column;">
+            <div class="job-details" id="job-details" style="font-size:12.5px;color:var(--text-2);margin-bottom:12px;"></div>
+            <div class="progress-section">
+              <div class="progress-label" style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+                <span id="progress-text" style="color:var(--text-3);">Scraping...</span>
+                <span id="progress-pct" style="font-weight:600;color:var(--primary);">0%</span>
+              </div>
+              <div class="progress-bar-track" style="width:100%;height:6px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden;margin-bottom:10px;">
+                <div class="progress-bar-fill" id="progress-bar" style="width:0%;height:100%;background:linear-gradient(90deg,var(--primary),var(--cyan));transition:width 0.3s ease;"></div>
+              </div>
+              <div class="progress-stats" style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-3);">
+                <span>Found: <strong id="job-found" style="color:var(--text)">0</strong> new leads</span>
+                <span>Scanned: <strong id="job-scanned" style="color:var(--text)">0</strong> pages</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
