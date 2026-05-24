@@ -36,6 +36,7 @@ def _lead_to_dict(lead: Lead) -> dict:
         "address": lead.address,
         "city": lead.city,
         "country": lead.country,
+        "source": lead.source,
         "google_rating": lead.google_rating,
         "review_count": lead.review_count,
         "maps_url": lead.maps_url,

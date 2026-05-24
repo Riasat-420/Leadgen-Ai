@@ -335,6 +335,13 @@ function renderLeadModal(lead) {
       ${lead.load_time_ms ? `<div style="margin-top:10px;font-size:12px;color:var(--text-3)">Load Time: <strong style="color:${lead.load_time_ms > 3000 ? 'var(--red)' : 'var(--green)'}">${lead.load_time_ms}ms</strong></div>` : ''}
     </div>` : ''}
 
+    <!-- Notes / Description -->
+    ${lead.notes ? `
+    <div class="modal-section">
+      <div class="modal-section-title">${lead.source !== 'google_maps' ? 'Posting Details & Description' : 'Notes'}</div>
+      <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:16px;font-size:13px;color:var(--text);white-space:pre-wrap;line-height:1.6;font-family:inherit">${esc(lead.notes)}</div>
+    </div>` : ''}
+
     <!-- AI Analysis -->
     ${lead.issues_found && lead.issues_found.length > 0 ? `
     <div class="modal-section">

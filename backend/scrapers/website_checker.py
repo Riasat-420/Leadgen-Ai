@@ -130,11 +130,98 @@ def check_website(url: Optional[str]) -> dict:
     return result
 
 
+def score_platform_lead(lead_data: dict) -> tuple[float, str]:
+    """
+    Compute a lead score (0–10) specifically for platform postings (Upwork, Freelancer, Fiverr, LinkedIn).
+    Returns (score, reason_string).
+    """
+    score = 3.0  # Base score for platform lead since they have active intent
+    reasons = ["Active project posting / professional search"]
+    
+    source = lead_data.get("source", "upwork")
+    notes = lead_data.get("notes") or ""
+    notes_lower = notes.lower()
+    
+    # 1. Check for email
+    if lead_data.get("email"):
+        score += 3.0
+        reasons.append("Direct contact email available")
+    else:
+        reasons.append("Platform application required")
+        
+    # 2. Check budget (if applicable)
+    budget = ""
+    # Extract budget from notes
+    for line in notes.split("\n"):
+        if "budget:" in line.lower() or "price:" in line.lower() or "starting price:" in line.lower():
+            budget = line
+            break
+            
+    if budget:
+        # Try to parse numeric amount
+        nums = [int(s) for s in re.findall(r'\d+', budget.replace(",", ""))]
+        if nums:
+            max_num = max(nums)
+            if max_num >= 5000:
+                score += 3.0
+                reasons.append(f"Enterprise budget ({budget.strip()})")
+            elif max_num >= 1500:
+                score += 2.0
+                reasons.append(f"High-value project ({budget.strip()})")
+            elif max_num >= 500:
+                score += 1.0
+                reasons.append(f"Mid-range project ({budget.strip()})")
+            else:
+                score += 0.5
+                reasons.append(f"Small-scale project ({budget.strip()})")
+        else:
+            score += 1.0
+            reasons.append(f"Budget indicated: {budget.replace('Budget:', '').strip()}")
+            
+    # 3. Check for high-value intent keywords
+    intent_keywords = {
+        "long-term": 1.5,
+        "long term": 1.5,
+        "ongoing": 1.0,
+        "immediate": 1.0,
+        "urgent": 1.0,
+        "redesign": 0.5,
+        "rebuild": 0.5,
+        "expert": 0.5,
+        "agency": 0.5,
+    }
+    
+    matched_kws = []
+    for kw, val in intent_keywords.items():
+        if kw in notes_lower:
+            score += val
+            matched_kws.append(kw)
+            
+    if matched_kws:
+        reasons.append(f"Intent signals: {', '.join(matched_kws[:3])}")
+        
+    # 4. Check for description richness
+    desc_len = len(notes)
+    if desc_len > 300:
+        score += 1.0
+        reasons.append("Highly detailed requirements")
+    elif desc_len > 150:
+        score += 0.5
+        reasons.append("Moderate details")
+        
+    score = min(round(score, 1), 10.0)
+    return score, " | ".join(reasons)
+
+
 def score_lead(lead_data: dict, website_data: dict) -> tuple[float, str]:
     """
     Compute a lead score (0–10) based on business + website data.
     Returns (score, reason_string).
     """
+    source = lead_data.get("source", "google_maps")
+    if source in ["upwork", "freelancer", "fiverr", "linkedin"]:
+        return score_platform_lead(lead_data)
+
     score = 0.0
     reasons = []
 
