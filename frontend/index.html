@@ -45,6 +45,11 @@
       <span class="nav-icon"><i data-lucide="send"></i></span>
       <span>Outreach</span>
     </a>
+    <a href="#" class="nav-item" data-view="inbox" id="nav-inbox">
+      <span class="nav-icon"><i data-lucide="inbox"></i></span>
+      <span>Inbox</span>
+      <span class="nav-badge" id="badge-inbox" style="background:var(--cyan);display:none;">0</span>
+    </a>
     <a href="#" class="nav-item" data-view="analytics" id="nav-analytics">
       <span class="nav-icon"><i data-lucide="bar-chart-2"></i></span>
       <span>Analytics</span>
@@ -52,6 +57,10 @@
     <a href="#" class="nav-item" data-view="api-docs" id="nav-api-docs">
       <span class="nav-icon"><i data-lucide="book-open"></i></span>
       <span>API Docs</span>
+    </a>
+    <a href="#" class="nav-item" data-view="settings" id="nav-settings">
+      <span class="nav-icon"><i data-lucide="settings"></i></span>
+      <span>Settings</span>
     </a>
   </nav>
 
@@ -690,6 +699,154 @@
     </div>
   </section>
 
+  <!-- ── INBOX VIEW (CRM Split-pane) ──────────────── -->
+  <section class="view" id="view-inbox">
+    <div style="display:grid;grid-template-columns:320px 1fr;height:calc(100vh - 120px);background:var(--card-bg);border:1px solid var(--border);border-radius:12px;overflow:hidden;">
+      
+      <!-- Left pane: conversations list -->
+      <div style="border-right:1px solid var(--border);display:flex;flex-direction:column;background:rgba(255,255,255,0.01);">
+        <div style="padding:16px;border-bottom:1px solid var(--border);display:flex;justify-content:between;align-items:center;gap:8px;flex-wrap:wrap;">
+          <h3 style="font-size:14px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px;margin:0;">
+            <i data-lucide="message-square" style="width:16px;height:16px;color:var(--primary);"></i> Active Threads
+          </h3>
+          <button class="btn btn-sm btn-secondary" id="sync-inbox-btn" onclick="syncInbox()" style="padding:4px 8px;font-size:11px;">
+            <i data-lucide="refresh-cw" style="width:12px;height:12px;margin-right:2px;vertical-align:middle;"></i> Sync
+          </button>
+        </div>
+        
+        <!-- Search conversations -->
+        <div style="padding:10px 16px;border-bottom:1px solid var(--border);">
+          <input type="text" id="inbox-search" oninput="filterInbox()" placeholder="Search conversation..." style="width:100%;padding:6px 10px;font-size:12px;background:rgba(0,0,0,0.2);border:1px solid var(--border);border-radius:6px;color:var(--text);" />
+        </div>
+
+        <!-- scrollable list -->
+        <div id="inbox-conversations-list" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">
+          <div class="empty-state" style="padding:32px 16px;">Loading conversations...</div>
+        </div>
+      </div>
+
+      <!-- Right pane: chat thread -->
+      <div id="inbox-thread-container" style="display:flex;flex-direction:column;background:rgba(0,0,0,0.15);">
+        <!-- Active conversation header -->
+        <div id="inbox-thread-header" style="padding:16px;border-bottom:1px solid var(--border);display:flex;justify-content:between;align-items:center;background:var(--card-bg);">
+          <div id="inbox-lead-details">
+            <div style="font-size:14px;font-weight:600;color:var(--text);">Select a conversation</div>
+            <div style="font-size:11px;color:var(--text-3);">Choose a lead from the left pane to view history.</div>
+          </div>
+          <div id="inbox-lead-status"></div>
+        </div>
+
+        <!-- Chat bubble body -->
+        <div id="inbox-thread-body" style="flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px;">
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--text-3);gap:12px;">
+            <i data-lucide="mail-open" style="width:36px;height:36px;opacity:0.3;"></i>
+            <span style="font-size:12px;">Select a thread to view the full dialogue history</span>
+          </div>
+        </div>
+
+        <!-- Chat editor footer -->
+        <div id="inbox-thread-footer" style="padding:16px;border-top:1px solid var(--border);background:var(--card-bg);display:none;flex-direction:column;gap:8px;">
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="inbox-reply-subject" placeholder="Subject (e.g. Re: WordPress rebuild)" style="flex:1;padding:8px 12px;font-size:12px;background:rgba(0,0,0,0.2);border:1px solid var(--border);border-radius:6px;color:var(--text);" />
+          </div>
+          <div style="display:flex;gap:8px;align-items:end;">
+            <textarea id="inbox-reply-body" rows="3" placeholder="Type your reply here..." style="flex:1;padding:8px 12px;font-size:13px;background:rgba(0,0,0,0.2);border:1px solid var(--border);border-radius:6px;color:var(--text);resize:none;font-family:inherit;line-height:1.5;"></textarea>
+            <button class="btn btn-primary" onclick="sendInboxReply()" style="padding:10px 16px;height:38px;display:flex;align-items:center;gap:6px;">
+              <i data-lucide="send" style="width:14px;height:14px;"></i> Send
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── SETTINGS VIEW (SMTP & IMAP Setup) ─────────── -->
+  <section class="view" id="view-settings">
+    <div style="max-width:800px;display:flex;flex-direction:column;gap:1.5rem;">
+      
+      <!-- Connection Panel -->
+      <div class="card" style="padding:24px;">
+        <div style="border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:20px;">
+          <h2 style="font-size:16px;font-weight:600;color:var(--text);margin:0;display:flex;align-items:center;gap:8px;">
+            <i data-lucide="mail" style="width:18px;height:18px;color:var(--primary);"></i> SMTP Server Configuration
+          </h2>
+          <p style="font-size:12px;color:var(--text-3);margin-top:4px;">Configure your sender server. If using Gmail, enter your email and a 16-character Google App Password.</p>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+          <div class="form-group" style="margin:0;">
+            <label class="form-label">SMTP Host</label>
+            <input type="text" id="sett-smtp-host" class="form-input" placeholder="e.g. smtp.gmail.com" />
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label class="form-label">SMTP Port</label>
+            <input type="text" id="sett-smtp-port" class="form-input" placeholder="e.g. 465 (SSL) or 587 (STARTTLS)" />
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+          <div class="form-group" style="margin:0;">
+            <label class="form-label">Encryption Protocol</label>
+            <select id="sett-smtp-enc" class="form-input filter-select" style="width:100%;">
+              <option value="ssl">SSL / TLS (Port 465 recommended)</option>
+              <option value="starttls">STARTTLS / Secure (Port 587 recommended)</option>
+              <option value="none">None / Plaintext</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label class="form-label">Sender Display Name</label>
+            <input type="text" id="sett-smtp-name" class="form-input" placeholder="e.g. John from Apex Web" />
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+          <div class="form-group" style="margin:0;">
+            <label class="form-label">SMTP Username (Email)</label>
+            <input type="email" id="sett-smtp-user" class="form-input" placeholder="e.g. username@gmail.com" />
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label class="form-label">SMTP Password</label>
+            <input type="password" id="sett-smtp-pass" class="form-input" placeholder="e.g. app password" />
+          </div>
+        </div>
+      </div>
+
+      <!-- IMAP Server Sync Panel -->
+      <div class="card" style="padding:24px;">
+        <div style="border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:20px;">
+          <h2 style="font-size:16px;font-weight:600;color:var(--text);margin:0;display:flex;align-items:center;gap:8px;">
+            <i data-lucide="inbox" style="width:18px;height:18px;color:var(--primary);"></i> IMAP Reply Sync Server Configuration
+          </h2>
+          <p style="font-size:12px;color:var(--text-3);margin-top:4px;">Configure the IMAP server so the system can crawl incoming replies from leads automatically.</p>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+          <div class="form-group" style="margin:0;">
+            <label class="form-label">IMAP Host</label>
+            <input type="text" id="sett-imap-host" class="form-input" placeholder="e.g. imap.gmail.com" />
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label class="form-label">IMAP Port</label>
+            <input type="text" id="sett-imap-port" class="form-input" placeholder="e.g. 993" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Panel -->
+      <div style="display:flex;justify-content:end;gap:12px;">
+        <button class="btn btn-secondary" onclick="testConnection()" id="test-conn-btn" style="padding:10px 20px;">
+          <i data-lucide="check" style="width:14px;height:14px;margin-right:4px;vertical-align:middle;"></i> Test SMTP Server
+        </button>
+        <button class="btn btn-primary" onclick="saveSettings()" id="save-sett-btn" style="padding:10px 24px;">
+          <i data-lucide="save" style="width:14px;height:14px;margin-right:4px;vertical-align:middle;"></i> Save Configurations
+        </button>
+      </div>
+
+    </div>
+  </section>
+
 </main>
 
 <!-- ── Lead Detail Modal ─────────────────────────────────── -->
@@ -767,6 +924,8 @@
 <script src="/static/js/leads.js"></script>
 <script src="/static/js/scraper.js"></script>
 <script src="/static/js/outreach.js"></script>
+<script src="/static/js/settings.js"></script>
+<script src="/static/js/inbox.js"></script>
 <!-- Initialize Lucide icons after all content is loaded -->
 <script>lucide.createIcons();</script>
 </body>

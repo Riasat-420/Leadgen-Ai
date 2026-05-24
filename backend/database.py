@@ -123,6 +123,36 @@ def create_tables():
     Base.metadata.create_all(bind=engine)
 
 
+class Setting(Base):
+    __tablename__ = "settings"
+
+    key   = Column(String, primary_key=True, index=True)
+    value = Column(Text, nullable=False)
+
+
+def get_setting(key: str, default: str = "") -> str:
+    db = SessionLocal()
+    try:
+        s = db.query(Setting).filter(Setting.key == key).first()
+        return s.value if s else default
+    finally:
+        db.close()
+
+
+def set_setting(key: str, value: str):
+    db = SessionLocal()
+    try:
+        s = db.query(Setting).filter(Setting.key == key).first()
+        if s:
+            s.value = value
+        else:
+            s = Setting(key=key, value=value)
+            db.add(s)
+        db.commit()
+    finally:
+        db.close()
+
+
 def get_db():
     db = SessionLocal()
     try:

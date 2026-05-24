@@ -24,8 +24,10 @@ function showView(name) {
     leads:     ['Leads',      'All collected business leads'],
     scraper:   ['Scraper',    'Launch Google Maps scraping jobs'],
     outreach:  ['Outreach',   'Send emails and track replies'],
+    inbox:     ['Outreach Inbox', 'Read replies, track dialogues, and chat with leads in real-time'],
     analytics: ['Analytics',  'Performance charts and insights'],
     'api-docs':['API Docs',   'Interactive and beautiful API Reference Documentation'],
+    settings:  ['System Settings', 'Configure your custom SMTP server and IMAP reply-sync credentials'],
   };
 
   const [title, sub] = titles[name] || ['—', ''];
@@ -38,7 +40,9 @@ function showView(name) {
     case 'leads':     loadLeads(1);    break;
     case 'scraper':   loadScraper();   break;
     case 'outreach':  loadOutreach();  break;
+    case 'inbox':     loadInbox();     break;
     case 'analytics': loadAnalytics(); break;
+    case 'settings':  loadSettings();  break;
   }
 }
 

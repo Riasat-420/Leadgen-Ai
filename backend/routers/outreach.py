@@ -108,3 +108,97 @@ def outreach_stats(db: Session = Depends(get_db)):
         "sent_today": emails_sent_today(),
         "daily_limit": 50,
     }
+
+
+# ── Conversational Inbox & Sync ───────────────────────────
+from outreach.imap_sync import sync_replies
+
+
+@router.post("/inbox/sync")
+def sync_inbox_endpoint():
+    synced = sync_replies()
+    return {"message": "Sync completed successfully", "new_messages": synced}
+
+
+@router.get("/inbox/conversations")
+def get_inbox_conversations(db: Session = Depends(get_db)):
+    leads = (
+        db.query(Lead)
+        .filter(
+            (Lead.emails_sent > 0)
+            | (Lead.reply_received == True)
+            | (Lead.status.in_(["contacted", "replied", "interested", "closed"]))
+        )
+        .all()
+    )
+    
+    conversations = []
+    for lead in leads:
+        latest_log = (
+            db.query(OutreachLog)
+            .filter(OutreachLog.lead_id == lead.id)
+            .order_by(OutreachLog.sent_at.desc())
+            .first()
+        )
+        
+        last_message = ""
+        last_time = lead.updated_at.isoformat() if lead.updated_at else None
+        
+        if latest_log:
+            last_message = (
+                latest_log.message_body[:80] + "..."
+                if len(latest_log.message_body) > 80
+                else latest_log.message_body
+            )
+            last_time = latest_log.sent_at.isoformat() if latest_log.sent_at else None
+            
+        conversations.append({
+            "id": lead.id,
+            "business_name": lead.business_name,
+            "email": lead.email,
+            "status": lead.status,
+            "reply_received": lead.reply_received,
+            "last_message": last_message,
+            "last_message_time": last_time,
+            "last_message_type": latest_log.message_type if latest_log else "email"
+        })
+        
+    conversations.sort(key=lambda x: x["last_message_time"] or "", reverse=True)
+    return conversations
+
+
+@router.get("/inbox/conversations/{lead_id}/thread")
+def get_conversation_thread(lead_id: int, db: Session = Depends(get_db)):
+    lead = db.query(Lead).filter(Lead.id == lead_id).first()
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+        
+    logs = (
+        db.query(OutreachLog)
+        .filter(OutreachLog.lead_id == lead_id)
+        .order_by(OutreachLog.sent_at.asc())
+        .all()
+    )
+    
+    thread = [
+        {
+            "id": l.id,
+            "message_type": l.message_type,  # email | incoming
+            "message_subject": l.message_subject,
+            "message_body": l.message_body,
+            "sent_at": l.sent_at.isoformat() if l.sent_at else None,
+            "status": l.status,
+            "follow_up_number": l.follow_up_number
+        }
+        for l in logs
+    ]
+    
+    return {
+        "lead": {
+            "id": lead.id,
+            "business_name": lead.business_name,
+            "email": lead.email,
+            "status": lead.status
+        },
+        "thread": thread
+    }

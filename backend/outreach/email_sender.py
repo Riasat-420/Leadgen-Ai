@@ -22,7 +22,7 @@ from config import (
     MAX_EMAILS_PER_DAY, FOLLOWUP_DAY_1, FOLLOWUP_DAY_2,
     TRACKING_BASE_URL,
 )
-from database import SessionLocal, Lead, OutreachLog
+from database import SessionLocal, Lead, OutreachLog, get_setting
 
 
 def _wrap_links_with_tracking(html_body: str, tracking_id: str) -> str:
@@ -42,11 +42,12 @@ def _build_mime_email(
     subject: str,
     body: str,
     tracking_id: str,
-    from_name: str = SENDER_NAME,
+    from_email: str,
+    from_name: str,
 ) -> MIMEMultipart:
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
-    msg["From"]    = f"{from_name} <{GMAIL_USER}>"
+    msg["From"]    = f"{from_name} <{from_email}>"
     msg["To"]      = to_email
 
     # Plain text part
@@ -85,12 +86,24 @@ def send_email(
     follow_up_number: int = 0,
 ) -> bool:
     """
-    Send an email via Gmail SMTP.
+    Send an email via Gmail SMTP or Custom SMTP settings.
     Logs result to OutreachLog table.
     Returns True on success.
     """
-    if not GMAIL_USER or not GMAIL_APP_PASSWORD:
-        print("[Email] Gmail credentials not configured in .env")
+    smtp_host = get_setting("smtp_host", "smtp.gmail.com")
+    
+    # Port default logic
+    encryption = get_setting("smtp_encryption", "ssl")
+    default_port = "465" if encryption == "ssl" else "587"
+    smtp_port_str = get_setting("smtp_port", default_port)
+    smtp_port = int(smtp_port_str) if smtp_port_str.isdigit() else (465 if encryption == "ssl" else 587)
+    
+    smtp_user = get_setting("smtp_user", GMAIL_USER)
+    smtp_password = get_setting("smtp_password", GMAIL_APP_PASSWORD)
+    smtp_sender_name = get_setting("smtp_sender_name", SENDER_NAME)
+
+    if not smtp_user or not smtp_password:
+        print("[Email] SMTP credentials not configured (neither database settings nor .env)")
         return False
 
     db = SessionLocal()
@@ -98,12 +111,27 @@ def send_email(
         # Generate unique tracking ID for this email
         tracking_id = uuid.uuid4().hex
 
-        msg = _build_mime_email(to_email, subject, body, tracking_id)
-        ctx = ssl.create_default_context()
+        msg = _build_mime_email(to_email, subject, body, tracking_id, smtp_user, smtp_sender_name)
 
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=ctx) as server:
-            server.login(GMAIL_USER, GMAIL_APP_PASSWORD)
-            server.sendmail(GMAIL_USER, to_email, msg.as_string())
+        # Connection and delivery
+        if encryption == "ssl":
+            ctx = ssl.create_default_context()
+            with smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=15, context=ctx) as server:
+                server.login(smtp_user, smtp_password)
+                server.sendmail(smtp_user, to_email, msg.as_string())
+        elif encryption == "starttls":
+            ctx = ssl.create_default_context()
+            with smtplib.SMTP(smtp_host, smtp_port, timeout=15) as server:
+                server.ehlo()
+                server.starttls(context=ctx)
+                server.ehlo()
+                server.login(smtp_user, smtp_password)
+                server.sendmail(smtp_user, to_email, msg.as_string())
+        else:
+            with smtplib.SMTP(smtp_host, smtp_port, timeout=15) as server:
+                if smtp_user and smtp_password:
+                    server.login(smtp_user, smtp_password)
+                server.sendmail(smtp_user, to_email, msg.as_string())
 
         # Log success with tracking ID
         log = OutreachLog(
@@ -198,8 +226,17 @@ def can_send_email() -> bool:
 def _run_follow_ups():
     """
     APScheduler job: runs every hour.
-    Finds leads whose follow-up date has passed and sends the next message.
+    First checks IMAP for any replies to avoid sending follow-ups to responded leads.
+    Then finds leads whose follow-up date has passed and sends the next message.
     """
+    try:
+        from outreach.imap_sync import sync_replies
+        print("[Scheduler] Pre-Scheduler Sync: Syncing IMAP inbox replies...")
+        synced = sync_replies()
+        print(f"[Scheduler] Pre-Scheduler Sync completed. Synced {synced} replies.")
+    except Exception as e:
+        print(f"[Scheduler] Pre-Scheduler Sync error: {e}")
+
     db = SessionLocal()
     try:
         now = datetime.datetime.utcnow()
