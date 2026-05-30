@@ -1,7 +1,7 @@
 /* api.js — Centralized API client */
 
 const API = {
-  BASE: '',
+  BASE: 'https://riasat360-leadgen-backend.hf.space',
 
   async get(path) {
     const res = await fetch(this.BASE + path);
