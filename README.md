@@ -1,3 +1,13 @@
+---
+title: LeadGen AI
+emoji: ⚡
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # ⚡ LeadGen AI — Lead Generation & Outreach Automation
 
 A full-stack AI-powered system that **scrapes Google Maps**, **analyzes businesses with Gemini AI**, **scores leads**, **generates personalized outreach messages**, and **sends automated email sequences** — all through a beautiful SaaS-style CRM dashboard.
