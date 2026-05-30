@@ -1,19 +1,17 @@
 FROM mcr.microsoft.com/playwright/python:v1.40.0-jammy
 
-# Create a non-root user with UID 1000 required by Hugging Face
-RUN useradd -m -u 1000 user
 WORKDIR /app
 
 # Copy requirements and install dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application files and set ownership to the non-root user
-COPY --chown=user backend/ ./backend/
+# Copy application files and set ownership to UID 1000 (pre-existing user)
+COPY --chown=1000 backend/ ./backend/
 
-# Switch to the non-root user
-USER user
-ENV PATH="/home/user/.local/bin:$PATH"
+# Switch to the pre-existing non-root user (UID 1000 / pwuser)
+USER 1000
+ENV PATH="/home/pwuser/.local/bin:$PATH"
 
 # Set working directory to backend
 WORKDIR /app/backend
