@@ -69,7 +69,7 @@
       <span class="status-dot online"></span>
       <span>API Connected</span>
     </div>
-    <a href="http://localhost:8000/docs" target="_blank" class="api-docs-link">
+    <a href="/docs" target="_blank" class="api-docs-link">
       <i data-lucide="book-open"></i> API Docs
     </a>
   </div>
@@ -242,6 +242,9 @@
           <button class="btn btn-sm" onclick="bulkGenerate()">
             <i data-lucide="pencil-line"></i> Generate Messages
           </button>
+          <button class="btn btn-sm btn-primary" onclick="bulkSendEmails()" style="background:var(--primary);border-color:var(--primary);display:flex;align-items:center;gap:4px;">
+            <i data-lucide="send" style="width:12px;height:12px;"></i> Send Emails
+          </button>
           <button class="btn btn-sm btn-outline" onclick="bulkDelete()" style="color:var(--red); border-color:rgba(239, 68, 68, 0.2);">
             <i data-lucide="trash-2"></i> Delete Selected
           </button>
@@ -343,13 +346,35 @@
                 </label>
               </div>
             </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+              <div class="form-group" style="margin:0;">
+                <label class="form-label" for="platform-city">Target City</label>
+                <input type="text" id="platform-city" class="form-input" placeholder="e.g. Montreal, Dubai, Remote" value="Remote" />
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label class="form-label" for="platform-country">Target Country</label>
+                <input type="text" id="platform-country" class="form-input" placeholder="e.g. Canada, UAE, Global" value="Global" />
+              </div>
+            </div>
             <div class="form-group">
               <label class="form-label" for="platform-keyword">Search Keyword</label>
               <input type="text" id="platform-keyword" class="form-input" placeholder="e.g. web design, SEO, WordPress" />
             </div>
-            <div class="form-group">
-              <label class="form-label" for="platform-max">Max Results (Per Platform)</label>
-              <input type="number" id="platform-max" class="form-input" value="30" min="5" max="100" />
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+              <div class="form-group" style="margin:0;">
+                <label class="form-label" for="platform-budget">Budget Target</label>
+                <select id="platform-budget" class="form-input filter-select" style="width:100%;">
+                  <option value="any">Any Budget</option>
+                  <option value="low">Low ($50 - $250)</option>
+                  <option value="medium">Medium ($250 - $1000)</option>
+                  <option value="high">High ($1000 - $3000)</option>
+                  <option value="enterprise">Enterprise ($3000+)</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label class="form-label" for="platform-max">Max Results (Per Platform)</label>
+                <input type="number" id="platform-max" class="form-input" value="30" min="5" max="100" style="margin:0;" />
+              </div>
             </div>
             <button class="btn btn-primary btn-full" id="platform-scrape-btn" onclick="startPlatformScrape()">
               <i data-lucide="play"></i> Start Scraping Platforms
@@ -863,6 +888,28 @@
         </div>
       </div>
 
+      <!-- Gemini AI Configuration Panel -->
+      <div class="card" style="padding:24px;">
+        <div style="border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:20px;">
+          <h2 style="font-size:16px;font-weight:600;color:var(--text);margin:0;display:flex;align-items:center;gap:8px;">
+            <i data-lucide="cpu" style="width:18px;height:18px;color:var(--primary);"></i> Gemini AI Configuration
+          </h2>
+          <p style="font-size:12px;color:var(--text-3);margin-top:4px;">Configure your Gemini API key to customize AI analysis and email outreach generation.</p>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr;gap:16px;margin-bottom:20px;">
+          <div class="form-group" style="margin:0;">
+            <label class="form-label">Gemini API Key</label>
+            <div style="display:flex;gap:12px;">
+              <input type="password" id="sett-gemini-key" class="form-input" placeholder="Enter your Gemini API Key (e.g. AIzaSy...)" style="flex:1;" />
+              <button class="btn btn-secondary" onclick="testGemini()" id="test-gemini-btn" style="padding:10px 16px;white-space:nowrap;display:flex;align-items:center;gap:4px;">
+                <i data-lucide="shield-check" style="width:14px;height:14px;"></i> Test Key
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Action Panel -->
       <div style="display:flex;justify-content:end;gap:12px;">
         <button class="btn btn-secondary" onclick="testConnection()" id="test-conn-btn" style="padding:10px 20px;">
@@ -898,6 +945,9 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeLeadModal()">Close</button>
+      <a href="#" target="_blank" class="btn btn-outline" id="modal-posting-btn" style="display:none;align-items:center;gap:6px;text-decoration:none;border-color:var(--border);color:var(--text-2);">
+        <i data-lucide="external-link" style="width:14px;height:14px;"></i> View Posting
+      </a>
       <button class="btn btn-secondary" id="modal-analyze-btn">
         <i data-lucide="cpu"></i> Analyze
       </button>

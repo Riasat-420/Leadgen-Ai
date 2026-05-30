@@ -100,6 +100,12 @@ function fillPlatformForm(platform, keyword) {
   if (cb) cb.checked = true;
   
   document.getElementById('platform-keyword').value = keyword;
+  const cityEl = document.getElementById('platform-city');
+  if (cityEl) cityEl.value = 'Remote';
+  const countryEl = document.getElementById('platform-country');
+  if (countryEl) countryEl.value = 'Global';
+  const budgetEl = document.getElementById('platform-budget');
+  if (budgetEl) budgetEl.value = 'any';
   showScrapeTab('platform');
 }
 
@@ -168,6 +174,13 @@ async function startPlatformScrape() {
   const platforms = [...checkedBoxes].map(cb => cb.value);
   const keyword    = document.getElementById('platform-keyword').value.trim();
   const maxResults = parseInt(document.getElementById('platform-max').value) || 30;
+  
+  const cityEl = document.getElementById('platform-city');
+  const countryEl = document.getElementById('platform-country');
+  const city = cityEl ? cityEl.value.trim() || 'Remote' : 'Remote';
+  const country = countryEl ? countryEl.value.trim() || 'Global' : 'Global';
+  const budgetEl = document.getElementById('platform-budget');
+  const budgetRange = budgetEl ? budgetEl.value : 'any';
 
   if (platforms.length === 0) {
     toast('Select at least one platform to scrape', 'warning');
@@ -192,7 +205,14 @@ async function startPlatformScrape() {
     // Launch parallel requests to the FastAPI backend scraper router
     for (const p of platforms) {
       try {
-        const res = await API.startPlatformScrape({ platform: p, keyword, max_results: maxResults });
+        const res = await API.startPlatformScrape({
+          platform: p,
+          keyword,
+          max_results: maxResults,
+          city,
+          country,
+          budget_range: budgetRange
+        });
         lastJobId = res.job_id;
         successCount++;
       } catch (err) {
@@ -204,7 +224,13 @@ async function startPlatformScrape() {
       _activeJobId = lastJobId;
       toast(`Launched scrapers for ${successCount}/${platforms.length} platforms!`, 'success');
       const activePlatform = platforms[platforms.length - 1];
-      showActiveJob(lastJobId, `[Multi] ${keyword}`, activePlatform);
+      
+      let locsLabel = '';
+      if (city !== 'Remote') locsLabel += city;
+      if (country !== 'Global') locsLabel += (locsLabel ? ', ' : '') + country;
+      const queryLabel = locsLabel ? `[Multi] ${keyword} (${locsLabel})` : `[Multi] ${keyword}`;
+      
+      showActiveJob(lastJobId, queryLabel, activePlatform);
       startPolling(lastJobId);
     } else {
       throw new Error('All platform scrape requests failed');

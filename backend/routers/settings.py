@@ -3,6 +3,7 @@ Settings Router — Exposes endpoints to retrieve, update, and test SMTP/IMAP se
 """
 import smtplib
 import ssl
+from typing import Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
@@ -20,10 +21,12 @@ class SettingsUpdate(BaseModel):
     smtp_encryption: str  # ssl | starttls | none
     imap_host: str
     imap_port: str
+    gemini_api_key: Optional[str] = ""
 
 
 @router.get("")
 def get_settings():
+    gemini_key = get_setting("gemini_api_key", "")
     return {
         "smtp_host": get_setting("smtp_host", ""),
         "smtp_port": get_setting("smtp_port", "587"),
@@ -33,6 +36,7 @@ def get_settings():
         "smtp_encryption": get_setting("smtp_encryption", "starttls"),
         "imap_host": get_setting("imap_host", ""),
         "imap_port": get_setting("imap_port", "993"),
+        "gemini_api_key": "●●●●●●●●" if gemini_key else "",
     }
 
 
@@ -51,7 +55,42 @@ def update_settings(update: SettingsUpdate):
     set_setting("imap_host", update.imap_host.strip())
     set_setting("imap_port", update.imap_port.strip())
     
+    # Handle Gemini API Key
+    gemini_key = update.gemini_api_key.strip() if update.gemini_api_key else ""
+    if gemini_key and gemini_key != "●●●●●●●●":
+        set_setting("gemini_api_key", gemini_key)
+    elif not gemini_key:
+        set_setting("gemini_api_key", "")
+        
     return {"message": "Settings updated successfully"}
+
+
+@router.post("/test-gemini")
+def test_gemini_connection(update: SettingsUpdate):
+    key = update.gemini_api_key.strip() if update.gemini_api_key else ""
+    if key == "●●●●●●●●":
+        key = get_setting("gemini_api_key", "")
+    if not key:
+        from config import GEMINI_API_KEY
+        key = GEMINI_API_KEY.strip() if GEMINI_API_KEY else ""
+        
+    if not key:
+        raise HTTPException(status_code=400, detail="Gemini API Key is empty. Please enter a key first.")
+        
+    try:
+        from google import genai
+        client = genai.Client(api_key=key)
+        # Call a tiny fast generation
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents="ping",
+        )
+        if response.text:
+            return {"success": True, "message": "Gemini API key is valid and working!"}
+        else:
+            raise Exception("No response text received from Gemini API.")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Gemini API key validation failed: {str(e)}")
 
 
 @router.post("/test")

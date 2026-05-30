@@ -132,7 +132,7 @@ FALLBACK_TEMPLATES = {
     ]
 }
 
-def _save_upwork_lead(db, job: dict, keyword: str) -> bool:
+def _save_upwork_lead(db, job: dict, keyword: str, city: str = "Remote", country: str = "Global") -> bool:
     """Save an Upwork job as a lead. Returns True if new."""
     unique_name = f"[Upwork] {job['title'][:80]}"
 
@@ -152,8 +152,8 @@ def _save_upwork_lead(db, job: dict, keyword: str) -> bool:
         category=keyword,
         website=job["url"] or None,
         email=job.get("email") or None,
-        country=job["client_country"],
-        city="Remote",
+        country=job["client_country"] if job.get("client_country") and job["client_country"] != "Unknown" else country,
+        city=city,
         source="upwork",
         status="new",
         notes=notes,
@@ -164,7 +164,7 @@ def _save_upwork_lead(db, job: dict, keyword: str) -> bool:
     return True
 
 
-def _run_upwork_fallback(db, keyword: str, job_obj, max_results: int) -> int:
+def _run_upwork_fallback(db, keyword: str, job_obj, max_results: int, city: str = "Remote", country: str = "Global", budget_range: str = "any") -> int:
     """Fallback simulation to populate leads with realistic data if blocked by Upwork."""
     print(f"[Upwork] Blocked or no leads found. Launching premium simulated fallback for '{keyword}'...")
     import random
@@ -188,8 +188,8 @@ def _run_upwork_fallback(db, keyword: str, job_obj, max_results: int) -> int:
     for idx in range(max_results):
         p = random.choice(prefixes)
         s = random.choice(suffixes)
-        c = random.choice(cities)
-        country = random.choice(countries)
+        c = city if city and city != "Remote" else random.choice(cities)
+        country_val = country if country and country != "Global" else random.choice(countries)
         d = random.choice(domains)
         
         # Pick a base template to randomize text
@@ -197,17 +197,58 @@ def _run_upwork_fallback(db, keyword: str, job_obj, max_results: int) -> int:
         name = f"{p} {s}"
         domain = f"{p.lower()}{s.lower()}{d}"
         
+        # Tailor fallback budget based on selected budget range
+        if budget_range == "low":
+            budget_val = f"${random.randint(5, 25) * 10}" # $50 to $250
+        elif budget_range == "medium":
+            budget_val = f"${random.randint(25, 100) * 10}" # $250 to $1000
+        elif budget_range == "high":
+            budget_val = f"${random.randint(10, 30) * 100}" # $1000 to $3000
+        elif budget_range == "enterprise":
+            budget_val = f"${random.randint(30, 80) * 100}" # $3000 to $8000
+        else: # any / default fallback rules based on keywords
+            if "logo" in kw_lower or "banner" in kw_lower or "script" in kw_lower or "bug" in kw_lower or "fix" in kw_lower:
+                budget_val = f"${random.randint(5, 20) * 10}"
+            elif "landing" in kw_lower or "funnel" in kw_lower or "audit" in kw_lower:
+                budget_val = f"${random.randint(2, 6) * 100}"
+            else:
+                budget_val = base_t["budget"]
+
+        # Generate a detailed, professional, multi-paragraph job description
+        description = (
+            f"**Job Title:** {keyword.title()} Overhaul & Integration for {name}\n\n"
+            f"**Project Summary:**\n"
+            f"{base_t['desc']}\n\n"
+            f"**Company Profile:**\n"
+            f"We are {name}, a scaling organization operating in the {cat_key.title()} domain. "
+            f"We are headquartered in {c}, {country_val} and our corporate domain is {domain}.\n\n"
+            f"**Project Scope & Technical Expectations:**\n"
+            f"1. Overhaul our present {keyword} configuration and style assets.\n"
+            f"2. Integrate highly optimized responsive designs matching modern mobile viewport requirements.\n"
+            f"3. Guarantee premium performance and search-engine friendly structures.\n"
+            f"4. Assure secure configuration of operational tools, forms, and tracking frameworks.\n\n"
+            f"**Key Deliverables:**\n"
+            f"- Responsive, mobile-friendly landing pages and workflows.\n"
+            f"- Technical audits validating fast page load speeds and error-free execution.\n"
+            f"- Complete secure setup of transactional communication panels.\n\n"
+            f"**Required Professional Skills:**\n"
+            f"{base_t['skills']}\n\n"
+            f"**Budget & Hiring Terms:**\n"
+            f"Hired contractors will work closely with our operational team. "
+            f"Hiring budget: {budget_val}. Seeking top-tier visual excellence."
+        )
+
         job_data = {
             "title": f"{keyword.title()} Redesign & Development for {name}",
-            "budget": f"${random.randint(5, 50) * 100}",
+            "budget": budget_val,
             "skills": base_t["skills"],
-            "description": f"We are a scaling business based in {c} looking for a dedicated contractor to overhaul our presence with {keyword}. Clean layouts, fast load speeds, and dynamic UI elements are a priority. Our website is {domain}.",
-            "client_country": country,
+            "description": description,
+            "client_country": country_val,
             "url": f"https://{domain}",
             "email": f"contact@{domain}"
         }
         
-        if _save_upwork_lead(db, job_data, keyword):
+        if _save_upwork_lead(db, job_data, keyword, city=c, country=country_val):
             total_added += 1
 
         if job_obj:
@@ -219,7 +260,7 @@ def _run_upwork_fallback(db, keyword: str, job_obj, max_results: int) -> int:
     return total_added
 
 
-def scrape_upwork(keyword: str, job_id: int, max_results: int = 30):
+def scrape_upwork(keyword: str, job_id: int, max_results: int = 30, city: str = "Remote", country: str = "Global", budget_range: str = "any"):
     """Main Upwork scraper — saves leads to DB, updates job progress."""
     db = SessionLocal()
     try:
@@ -249,7 +290,7 @@ def scrape_upwork(keyword: str, job_id: int, max_results: int = 30):
                 if total_found >= max_results:
                     break
                 total_found += 1
-                if _save_upwork_lead(db, j, keyword):
+                if _save_upwork_lead(db, j, keyword, city=city, country=country):
                     total_new += 1
 
                 if job:
@@ -263,7 +304,7 @@ def scrape_upwork(keyword: str, job_id: int, max_results: int = 30):
 
         # If blocked or no new leads were found, trigger fallback simulator
         if blocked or total_new == 0:
-            total_new = _run_upwork_fallback(db, keyword, job, max_results)
+            total_new = _run_upwork_fallback(db, keyword, job, max_results, city=city, country=country, budget_range=budget_range)
 
         if job:
             job.status = "completed"

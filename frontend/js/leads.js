@@ -1,9 +1,50 @@
-/* leads.js — Leads table, filtering, pagination, bulk actions */
+/* leads.js — Leads table, filtering, pagination, bulk actions, and real-time polling engine */
 
 let _leadsPage     = 1;
 let _leadsTotal    = 0;
 let _leadsPageSize = 20;
 
+// ── Real-Time Polling Engine ────────────────────────────────
+const _activeLeadPollers = new Map();
+
+function startPollingLead(leadId) {
+  if (_activeLeadPollers.has(leadId)) return;
+
+  const interval = setInterval(async () => {
+    try {
+      const lead = await API.getLead(leadId);
+      
+      // If status has finished transitioning away from background tasks
+      if (lead.status !== 'analyzing' && lead.status !== 'generating') {
+        clearInterval(interval);
+        _activeLeadPollers.delete(leadId);
+        
+        // Refresh leads list to show the updated status, score, etc.
+        loadLeads(_leadsPage);
+        
+        // Also refresh dashboard stats if currently viewing dashboard
+        if (typeof currentView !== 'undefined' && currentView === 'dashboard') {
+          loadDashboard();
+        }
+        
+        // Also, if the lead detail modal is currently open for THIS lead, re-render it to show the fresh analysis!
+        if (typeof _currentLeadId !== 'undefined' && _currentLeadId === leadId) {
+          openLeadModal(leadId, true); // skip spinner
+        }
+        
+        toast(`Lead "${lead.business_name}" update completed!`, 'success');
+      }
+    } catch (e) {
+      console.error(`Error polling lead #${leadId}:`, e);
+      clearInterval(interval);
+      _activeLeadPollers.delete(leadId);
+    }
+  }, 2500);
+  
+  _activeLeadPollers.set(leadId, interval);
+}
+
+// ── Load Leads ──────────────────────────────────────────────
 async function loadLeads(page = 1) {
   _leadsPage = page;
 
@@ -62,8 +103,17 @@ async function loadLeads(page = 1) {
         <td>
           <div class="action-group">
             <button class="btn-icon" title="View Details" onclick="openLeadModal(${lead.id})"><i data-lucide="eye" style="width:14px;height:14px;display:inline-block;vertical-align:middle"></i></button>
-            <button class="btn-icon" title="Analyze" onclick="analyzeLeadInline(${lead.id}, this)"><i data-lucide="cpu" style="width:14px;height:14px;display:inline-block;vertical-align:middle"></i></button>
-            <button class="btn-icon" title="Generate Messages" onclick="generateMessagesInline(${lead.id}, this)"><i data-lucide="pencil-line" style="width:14px;height:14px;display:inline-block;vertical-align:middle"></i></button>
+            
+            ${lead.status === 'analyzing'
+              ? `<button class="btn-icon" title="Analyzing..." disabled><i data-lucide="loader" style="width:14px;height:14px;display:inline-block;vertical-align:middle;animation:spin 1.5s infinite linear"></i></button>`
+              : `<button class="btn-icon" title="Analyze" onclick="analyzeLeadInline(${lead.id}, this)"><i data-lucide="cpu" style="width:14px;height:14px;display:inline-block;vertical-align:middle"></i></button>`
+            }
+            
+            ${lead.status === 'generating'
+              ? `<button class="btn-icon" title="Generating messages..." disabled><i data-lucide="loader" style="width:14px;height:14px;display:inline-block;vertical-align:middle;animation:spin 1.5s infinite linear"></i></button>`
+              : `<button class="btn-icon" title="Generate Messages" onclick="generateMessagesInline(${lead.id}, this)"><i data-lucide="pencil-line" style="width:14px;height:14px;display:inline-block;vertical-align:middle"></i></button>`
+            }
+            
             <button class="btn-icon" title="Send Email" onclick="openEmailForLead(${lead.id})"><i data-lucide="mail" style="width:14px;height:14px;display:inline-block;vertical-align:middle"></i></button>
             <button class="btn-icon" title="Delete" onclick="deleteLeadInline(${lead.id}, this)" style="color:var(--red)"><i data-lucide="trash-2" style="width:14px;height:14px;display:inline-block;vertical-align:middle"></i></button>
           </div>
@@ -76,9 +126,16 @@ async function loadLeads(page = 1) {
 
     if (window.lucide) lucide.createIcons();
 
+    // Automatically resume pollers for any loaded leads in background state (e.g., page load/reload)
+    data.leads.forEach(lead => {
+      if (lead.status === 'analyzing' || lead.status === 'generating') {
+        startPollingLead(lead.id);
+      }
+    });
+
   } catch (e) {
     console.error('Load leads error:', e);
-    tbody.innerHTML = `<tr><td colspan="9" class="empty-state" style="color:var(--red)">Error loading leads: ${esc(e.message)}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10" class="empty-state" style="color:var(--red)">Error loading leads: ${esc(e.message)}</td></tr>`;
   }
 }
 
@@ -106,47 +163,30 @@ function renderPagination(totalPages, current) {
 
 // Inline actions
 async function analyzeLeadInline(id, btn) {
-  btn.innerHTML = '<i data-lucide="loader" style="width:14px;height:14px;display:inline-block;vertical-align:middle"></i>';
+  btn.innerHTML = '<i data-lucide="loader" style="width:14px;height:14px;display:inline-block;vertical-align:middle;animation:spin 1.5s infinite linear"></i>';
   if (window.lucide) lucide.createIcons();
   btn.disabled = true;
   try {
     await API.analyzeLead(id);
     toast(`Analysis started for lead #${id}`, 'info');
-    btn.innerHTML = '<i data-lucide="check" style="width:14px;height:14px;display:inline-block;vertical-align:middle;color:var(--green)"></i>';
-    if (window.lucide) lucide.createIcons();
-    setTimeout(() => {
-      btn.innerHTML = '<i data-lucide="cpu" style="width:14px;height:14px;display:inline-block;vertical-align:middle"></i>';
-      if (window.lucide) lucide.createIcons();
-      btn.disabled = false;
-    }, 3000);
+    startPollingLead(id);
   } catch (e) {
     toast(e.message, 'error');
-    btn.innerHTML = '<i data-lucide="cpu" style="width:14px;height:14px;display:inline-block;vertical-align:middle"></i>';
-    if (window.lucide) lucide.createIcons();
-    btn.disabled = false;
+    loadLeads(_leadsPage);
   }
 }
 
 async function generateMessagesInline(id, btn) {
-  btn.innerHTML = '<i data-lucide="loader" style="width:14px;height:14px;display:inline-block;vertical-align:middle"></i>';
+  btn.innerHTML = '<i data-lucide="loader" style="width:14px;height:14px;display:inline-block;vertical-align:middle;animation:spin 1.5s infinite linear"></i>';
   if (window.lucide) lucide.createIcons();
   btn.disabled = true;
   try {
     await API.generateMessages(id);
-    toast('Generating messages...', 'info');
-    btn.innerHTML = '<i data-lucide="check" style="width:14px;height:14px;display:inline-block;vertical-align:middle;color:var(--green)"></i>';
-    if (window.lucide) lucide.createIcons();
-    setTimeout(() => {
-      btn.innerHTML = '<i data-lucide="pencil-line" style="width:14px;height:14px;display:inline-block;vertical-align:middle"></i>';
-      if (window.lucide) lucide.createIcons();
-      btn.disabled = false;
-      loadLeads(_leadsPage);
-    }, 5000);
+    toast(`Message generation started for lead #${id}`, 'info');
+    startPollingLead(id);
   } catch (e) {
     toast(e.message, 'error');
-    btn.innerHTML = '<i data-lucide="pencil-line" style="width:14px;height:14px;display:inline-block;vertical-align:middle"></i>';
-    if (window.lucide) lucide.createIcons();
-    btn.disabled = false;
+    loadLeads(_leadsPage);
   }
 }
 
@@ -185,10 +225,14 @@ async function bulkAnalyze() {
   toast(`Starting analysis for ${ids.length} leads...`, 'info');
   let done = 0;
   for (const id of ids) {
-    try { await API.analyzeLead(id); done++; } catch {}
-    await new Promise(r => setTimeout(r, 500));
+    try {
+      await API.analyzeLead(id);
+      startPollingLead(id);
+      done++;
+    } catch {}
+    await new Promise(r => setTimeout(r, 200));
   }
-  toast(`Queued analysis for ${done} leads. Refresh in ~30s.`, 'success');
+  toast(`Started AI analysis for ${done} leads. Progress is being monitored in real-time!`, 'success');
 }
 
 async function bulkGenerate() {
@@ -198,10 +242,14 @@ async function bulkGenerate() {
   toast(`Generating messages for ${ids.length} leads...`, 'info');
   let done = 0;
   for (const id of ids) {
-    try { await API.generateMessages(id); done++; } catch {}
-    await new Promise(r => setTimeout(r, 500));
+    try {
+      await API.generateMessages(id);
+      startPollingLead(id);
+      done++;
+    } catch {}
+    await new Promise(r => setTimeout(r, 200));
   }
-  toast(`Queued message generation for ${done} leads. Refresh in ~15s.`, 'success');
+  toast(`Started draft generation for ${done} leads. Progress is being monitored in real-time!`, 'success');
 }
 
 async function bulkDelete() {
@@ -218,6 +266,64 @@ async function bulkDelete() {
   toast(`Successfully deleted ${done} leads`, 'success');
   
   // Uncheck select all
+  const selectAll = document.getElementById('select-all');
+  if (selectAll) selectAll.checked = false;
+  
+  onCheckboxChange();
+  loadLeads(_leadsPage);
+}
+
+async function bulkSendEmails() {
+  const ids = [...document.querySelectorAll('.lead-cb:checked')].map(cb => Number(cb.value));
+  if (!ids.length) return;
+
+  toast(`Preparing to send bulk emails to ${ids.length} leads...`, 'info');
+  
+  let successCount = 0;
+  let skippedCount = 0;
+  let errorCount = 0;
+
+  for (const id of ids) {
+    try {
+      const lead = await API.getLead(id);
+      
+      // Validation checks
+      if (!lead.email || !lead.email.trim()) {
+        skippedCount++;
+        continue;
+      }
+      if (!lead.cold_email_body || !lead.cold_email_body.trim()) {
+        skippedCount++;
+        continue;
+      }
+
+      // Trigger the send email API
+      await API.sendEmail({
+        lead_id: id,
+        to_email: lead.email,
+        subject: lead.cold_email_subject,
+        body: lead.cold_email_body
+      });
+      successCount++;
+    } catch (err) {
+      console.error(`Error sending email to lead #${id}:`, err);
+      errorCount++;
+    }
+    // Delay between SMTP deliveries to prevent spam blocks and rate limits
+    await new Promise(r => setTimeout(r, 1000));
+  }
+
+  if (successCount > 0) {
+    toast(`Successfully sent cold emails to ${successCount} leads!`, 'success');
+  }
+  if (skippedCount > 0) {
+    toast(`Skipped ${skippedCount} leads (missing email or drafted message).`, 'warning');
+  }
+  if (errorCount > 0) {
+    toast(`Failed to send emails to ${errorCount} leads due to SMTP/SMTP errors.`, 'error');
+  }
+
+  // Reset checkboxes & reload leads
   const selectAll = document.getElementById('select-all');
   if (selectAll) selectAll.checked = false;
   

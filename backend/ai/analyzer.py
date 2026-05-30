@@ -12,13 +12,27 @@ from config import GEMINI_API_KEY, GEMINI_MODEL, SENDER_NAME
 
 # Lazy client — initialized on first use
 _client = None
+_cached_api_key = None
 
 def _get_client():
-    global _client
-    if _client is None:
-        if not GEMINI_API_KEY:
-            raise ValueError("GEMINI_API_KEY not set in .env")
-        _client = genai.Client(api_key=GEMINI_API_KEY)
+    global _client, _cached_api_key
+    from database import get_setting
+    
+    # Try database first
+    api_key = get_setting("gemini_api_key", "").strip()
+    
+    # Fallback to config
+    if not api_key:
+        from config import GEMINI_API_KEY
+        api_key = GEMINI_API_KEY.strip() if GEMINI_API_KEY else ""
+        
+    if not api_key:
+        raise ValueError("Gemini API Key is not configured. Please set it in Settings.")
+        
+    if _client is None or api_key != _cached_api_key:
+        _client = genai.Client(api_key=api_key)
+        _cached_api_key = api_key
+        
     return _client
 
 

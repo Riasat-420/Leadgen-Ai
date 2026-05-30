@@ -56,9 +56,9 @@ def on_startup():
     run_migrations()
     create_tables()
     start_scheduler()
-    print("[LeadGen AI] Server running at http://localhost:8000")
-    print("[LeadGen AI] Dashboard: http://localhost:8000")
-    print("[LeadGen AI] API Docs:  http://localhost:8000/docs")
+    print("[LeadGen AI] Server running at http://localhost:8005")
+    print("[LeadGen AI] Dashboard: http://localhost:8005")
+    print("[LeadGen AI] API Docs:  http://localhost:8005/docs")
 
 
 @app.on_event("shutdown")

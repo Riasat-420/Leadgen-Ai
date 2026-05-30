@@ -18,6 +18,12 @@ function showView(name) {
 
   currentView = name;
 
+  // Persist view state to localStorage & hash
+  localStorage.setItem('leadgen_active_view', name);
+  if (window.location.hash !== '#' + name) {
+    history.replaceState(null, null, '#' + name);
+  }
+
   // Update topbar
   const titles = {
     dashboard: ['Dashboard',  'Overview of your lead pipeline'],
@@ -239,10 +245,12 @@ function esc(str) {
 }
 
 // ── Lead Modal ────────────────────────────────────────────
-async function openLeadModal(id) {
+async function openLeadModal(id, skipSpinner = false) {
   _currentLeadId = id;
-  document.getElementById('lead-modal-overlay').classList.add('open');
-  document.getElementById('modal-body').innerHTML = '<div class="empty-state">Loading...</div>';
+  if (!skipSpinner) {
+    document.getElementById('lead-modal-overlay').classList.add('open');
+    document.getElementById('modal-body').innerHTML = '<div class="empty-state">Loading...</div>';
+  }
 
   try {
     const lead = await API.getLead(id);
@@ -271,22 +279,50 @@ function renderLeadModal(lead) {
     scoreEl.textContent = lead.lead_score ? lead.lead_score.toFixed(1) : '—';
   }
 
-  // Action buttons
-  document.getElementById('modal-analyze-btn').onclick = async () => {
-    try {
-      toast('Analysis started...', 'info');
-      await API.analyzeLead(lead.id);
-      toast('Analyzing in background — refresh in ~30s', 'success');
-    } catch (e) { toast(e.message, 'error'); }
-  };
+  // Handle Platform Posting Link Button
+  const postingBtn = document.getElementById('modal-posting-btn');
+  if (postingBtn) {
+    if (lead.source !== 'google_maps' && lead.website) {
+      postingBtn.href = lead.website;
+      postingBtn.style.display = 'inline-flex';
+    } else {
+      postingBtn.style.display = 'none';
+    }
+  }
 
-  document.getElementById('modal-generate-btn').onclick = async () => {
-    try {
-      toast('Generating messages...', 'info');
-      await API.generateMessages(lead.id);
-      toast('Messages generating — refresh in ~15s', 'success');
-    } catch (e) { toast(e.message, 'error'); }
-  };
+  // Action buttons with loader states
+  const analyzeBtn = document.getElementById('modal-analyze-btn');
+  const generateBtn = document.getElementById('modal-generate-btn');
+
+  if (lead.status === 'analyzing') {
+    analyzeBtn.disabled = true;
+    analyzeBtn.innerHTML = '<i data-lucide="loader" style="width:14px;height:14px;display:inline-block;vertical-align:middle;animation:spin 1.5s infinite linear;margin-right:4px;"></i> Analyzing...';
+  } else {
+    analyzeBtn.disabled = false;
+    analyzeBtn.innerHTML = '<i data-lucide="cpu" style="width:14px;height:14px;display:inline-block;vertical-align:middle;margin-right:4px;"></i> Analyze';
+    analyzeBtn.onclick = async () => {
+      try {
+        toast('Analysis started...', 'info');
+        await API.analyzeLead(lead.id);
+        if (typeof startPollingLead === 'function') startPollingLead(lead.id);
+      } catch (e) { toast(e.message, 'error'); }
+    };
+  }
+
+  if (lead.status === 'generating') {
+    generateBtn.disabled = true;
+    generateBtn.innerHTML = '<i data-lucide="loader" style="width:14px;height:14px;display:inline-block;vertical-align:middle;animation:spin 1.5s infinite linear;margin-right:4px;"></i> Generating...';
+  } else {
+    generateBtn.disabled = false;
+    generateBtn.innerHTML = '<i data-lucide="pencil-line" style="width:14px;height:14px;display:inline-block;vertical-align:middle;margin-right:4px;"></i> Generate Messages';
+    generateBtn.onclick = async () => {
+      try {
+        toast('Generating messages...', 'info');
+        await API.generateMessages(lead.id);
+        if (typeof startPollingLead === 'function') startPollingLead(lead.id);
+      } catch (e) { toast(e.message, 'error'); }
+    };
+  }
 
   document.getElementById('modal-send-btn').onclick = () => {
     openEmailModal(lead);
@@ -587,7 +623,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  showView('dashboard');
+  // Get active view from hash or localStorage
+  const savedView = window.location.hash.substring(1) || localStorage.getItem('leadgen_active_view') || 'dashboard';
+  const validViews = ['dashboard', 'leads', 'scraper', 'outreach', 'inbox', 'analytics', 'api-docs', 'settings'];
+  const initialView = validViews.includes(savedView) ? savedView : 'dashboard';
+  showView(initialView);
+
+  // Wire browser back/forward support
+  window.addEventListener('hashchange', () => {
+    const hash = window.location.hash.substring(1);
+    if (hash && hash !== currentView && validViews.includes(hash)) {
+      showView(hash);
+    }
+  });
 
   // Check API health
   fetch('/api/health')

@@ -4,10 +4,15 @@ Safely adds missing Phase 2 columns to the SQLite database without losing existi
 """
 import sqlite3
 import os
+from config import DATABASE_URL
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "leadgen.db")
 
 def run_migrations():
+    if "sqlite" not in DATABASE_URL:
+        print("[Migration] Non-SQLite database detected. Skipping SQLite schema migrations.")
+        return
+
     print(f"[Migration] Checking database schema at: {DB_PATH}")
     if not os.path.exists(DB_PATH):
         print("[Migration] Database file does not exist yet. It will be initialized on startup.")

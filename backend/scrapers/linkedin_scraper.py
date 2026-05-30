@@ -165,7 +165,7 @@ FALLBACK_TEMPLATES = {
     ]
 }
 
-def _save_linkedin_lead(db, data: dict, keyword: str) -> bool:
+def _save_linkedin_lead(db, data: dict, keyword: str, city: str = "Remote", country: str = "Global") -> bool:
     """Save a LinkedIn company as a lead. Returns True if new."""
     name = data["name"]
     existing = db.query(Lead).filter(Lead.business_name == name).first()
@@ -178,14 +178,17 @@ def _save_linkedin_lead(db, data: dict, keyword: str) -> bool:
             return False
 
     # Parse city/country from location string
-    city, country = "Unknown", "Unknown"
+    parsed_city, parsed_country = "Unknown", "Unknown"
     if data.get("location"):
         parts = data["location"].split(",")
         if len(parts) >= 2:
-            city = parts[0].strip()
-            country = parts[-1].strip()
+            parsed_city = parts[0].strip()
+            parsed_country = parts[-1].strip()
         elif len(parts) == 1:
-            city = parts[0].strip()
+            parsed_city = parts[0].strip()
+
+    lead_city = parsed_city if parsed_city != "Unknown" else city
+    lead_country = parsed_country if parsed_country != "Unknown" else country
 
     notes = (
         f"Industry: {data.get('industry', '')}\n"
@@ -199,8 +202,8 @@ def _save_linkedin_lead(db, data: dict, keyword: str) -> bool:
         category=data.get("industry") or keyword,
         website=data.get("website"),
         email=data.get("email"),
-        city=city,
-        country=country,
+        city=lead_city,
+        country=lead_country,
         source="linkedin",
         status="new",
         notes=notes,
@@ -211,7 +214,7 @@ def _save_linkedin_lead(db, data: dict, keyword: str) -> bool:
     return True
 
 
-def _run_linkedin_fallback(db, keyword: str, job_obj, max_results: int) -> int:
+def _run_linkedin_fallback(db, keyword: str, job_obj, max_results: int, city: str = "Remote", country: str = "Global") -> int:
     """Fallback simulation to populate leads with realistic data if blocked by Google/LinkedIn."""
     print(f"[LinkedIn] Blocked or no leads found. Launching premium simulated fallback for '{keyword}'...")
     import random
@@ -219,6 +222,7 @@ def _run_linkedin_fallback(db, keyword: str, job_obj, max_results: int) -> int:
     prefixes = ["Apex", "Vertex", "Quantum", "Nexa", "Vortex", "Horizon", "Clarity", "Matrix", "Krypton", "Strata", "Blue", "Gold", "Core", "Flux", "Nova"]
     suffixes = ["Advisors", "Holdings", "Group", "Consulting", "Solutions", "Enterprises", "Ventures", "Partners", "Systems", "Technologies"]
     cities = ["Montreal", "Toronto", "Dubai", "New York", "London", "Sydney", "Paris", "Singapore"]
+    countries = ["Canada", "United States", "United Kingdom", "United Arab Emirates", "Australia"]
     domains = [".com", ".net", ".io", ".co", ".ca", ".ae"]
 
     cat_key = "web design"
@@ -234,7 +238,8 @@ def _run_linkedin_fallback(db, keyword: str, job_obj, max_results: int) -> int:
     for idx in range(max_results):
         p = random.choice(prefixes)
         s = random.choice(suffixes)
-        c = random.choice(cities)
+        c = city if city and city != "Remote" else random.choice(cities)
+        country_val = country if country and country != "Global" else random.choice(countries)
         d = random.choice(domains)
         
         base_t = templates[idx % len(templates)]
@@ -247,12 +252,12 @@ def _run_linkedin_fallback(db, keyword: str, job_obj, max_results: int) -> int:
             "description": f"At {name}, we execute top-tier {base_t['industry'].lower()} projects globally. Our target is to drive high-performance digital growth using modern tools.",
             "website": f"https://{domain}",
             "employees": f"{random.choice([10, 25, 50, 100])}-{random.choice([250, 500])} employees",
-            "location": f"{c}, Global Headquarters",
+            "location": f"{c}, {country_val}",
             "linkedin_url": f"https://www.linkedin.com/company/{p.lower()}-{s.lower()}",
             "email": f"contact@{domain}"
         }
         
-        if _save_linkedin_lead(db, company_data, keyword):
+        if _save_linkedin_lead(db, company_data, keyword, city=c, country=country_val):
             total_added += 1
 
         if job_obj:
@@ -264,7 +269,7 @@ def _run_linkedin_fallback(db, keyword: str, job_obj, max_results: int) -> int:
     return total_added
 
 
-def scrape_linkedin(keyword: str, job_id: int, max_results: int = 20):
+def scrape_linkedin(keyword: str, job_id: int, max_results: int = 20, city: str = "Remote", country: str = "Global", budget_range: str = "any"):
     """Main LinkedIn scraper."""
     db = SessionLocal()
     try:
@@ -302,7 +307,7 @@ def scrape_linkedin(keyword: str, job_id: int, max_results: int = 20):
 
                 if data and data.get("name"):
                     total_found += 1
-                    if _save_linkedin_lead(db, data, keyword):
+                    if _save_linkedin_lead(db, data, keyword, city=city, country=country):
                         total_new += 1
 
                     if job:
@@ -317,7 +322,7 @@ def scrape_linkedin(keyword: str, job_id: int, max_results: int = 20):
             time.sleep(random.uniform(3, 6))
 
         if blocked or total_new == 0:
-            total_new = _run_linkedin_fallback(db, keyword, job, max_results)
+            total_new = _run_linkedin_fallback(db, keyword, job, max_results, city=city, country=country)
 
         if job:
             job.status = "completed"

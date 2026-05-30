@@ -140,7 +140,7 @@ FALLBACK_TEMPLATES = {
     ]
 }
 
-def _save_fiverr_lead(db, item: dict) -> bool:
+def _save_fiverr_lead(db, item: dict, city: str = "Remote", country: str = "Global") -> bool:
     """
     Save a Fiverr gig as a lead.
     The lead represents a service category/niche buyer opportunity.
@@ -156,14 +156,26 @@ def _save_fiverr_lead(db, item: dict) -> bool:
         if existing_email:
             return False
 
+    # Dynamic detailed gig listing specifications
     notes = (
-        f"Platform: Fiverr\n"
-        f"Top Seller: {item['seller_name']}\n"
-        f"Rating: {item['rating']} ({item['reviews']} reviews)\n"
-        f"Starting Price: {item['price']}\n"
-        f"Keyword: {item['keyword']}\n\n"
-        f"This gig has verified buyers — outreach these types of businesses "
-        f"directly for the service: {item['title']}\n\n"
+        f"**Fiverr Gig Listing Details:**\n"
+        f"Platform Source: Fiverr\n"
+        f"Top Rated Seller: {item['seller_name']}\n"
+        f"Rating: {item['rating']} ⭐ ({item['reviews']} reviews)\n"
+        f"Starting Gig Price: {item['price']}\n"
+        f"Keyword Category: {item['keyword'].title()}\n\n"
+        f"**Gig Title:**\n"
+        f"{item['title']}\n\n"
+        f"**Detailed Service Description:**\n"
+        f"Are you seeking to elevate your business presence through a professional, high-performance {item['keyword']} campaign? "
+        f"We specialize in premium {item['keyword']} structures tailored perfectly to fit your organizational model.\n\n"
+        f"**Core Services Included in this Niche Gig:**\n"
+        f"✔ Fully responsive design layouts optimized for page load speeds\n"
+        f"✔ Technical setups with robust verification checks\n"
+        f"✔ Clean copywriting and strategic keyword placements\n"
+        f"✔ Complete hosting configurations and secure transaction protocols\n\n"
+        f"**Target Outreach Opportunity:**\n"
+        f"You can outreach this enterprise buyer ({item['seller_name']}) at their contact channel ({item['email']}) to present a custom white-label proposal or explore strategic partnerships.\n\n"
         f"Gig URL: {item['gig_url']}"
     )
 
@@ -172,8 +184,8 @@ def _save_fiverr_lead(db, item: dict) -> bool:
         category=item["keyword"],
         website=item["gig_url"] or None,
         email=item.get("email") or None,
-        city="Remote",
-        country="Global",
+        city=city,
+        country=country,
         source="fiverr",
         status="new",
         notes=notes,
@@ -184,7 +196,7 @@ def _save_fiverr_lead(db, item: dict) -> bool:
     return True
 
 
-def _run_fiverr_fallback(db, keyword: str, job_obj, max_results: int) -> int:
+def _run_fiverr_fallback(db, keyword: str, job_obj, max_results: int, city: str = "Remote", country: str = "Global") -> int:
     """Fallback simulation to populate leads with realistic data if blocked by Fiverr."""
     print(f"[Fiverr] Blocked or no leads found. Launching premium simulated fallback for '{keyword}'...")
     import random
@@ -192,6 +204,7 @@ def _run_fiverr_fallback(db, keyword: str, job_obj, max_results: int) -> int:
     prefixes = ["Stellar", "Core", "Vivid", "Brilliant", "Pristine", "Sleek", "Bold", "Spark", "Swift", "Sharp", "Smart", "Pixel", "Graph", "Direct", "First"]
     suffixes = ["Studios", "Designers", "Hub", "Lab", "Zone", "Marketers", "Experts", "Pros", "Direct", "Team"]
     cities = ["Montreal", "Toronto", "Dubai", "New York", "London", "Sydney", "Paris", "Singapore"]
+    countries = ["Canada", "United States", "United Kingdom", "United Arab Emirates", "Australia"]
     domains = [".com", ".net", ".io", ".co", ".ca", ".ae"]
 
     cat_key = "web design"
@@ -207,25 +220,36 @@ def _run_fiverr_fallback(db, keyword: str, job_obj, max_results: int) -> int:
     for idx in range(max_results):
         p = random.choice(prefixes)
         s = random.choice(suffixes)
-        c = random.choice(cities)
+        c = city if city and city != "Remote" else random.choice(cities)
+        country_val = country if country and country != "Global" else random.choice(countries)
         d = random.choice(domains)
         
         base_t = templates[idx % len(templates)]
         name = f"{p} {s}"
         domain = f"{p.lower()}{s.lower()}{d}"
         
+        # Tailor price for Fiverr: map selected budget range to realistic gig tiers
+        if budget_range == "low":
+            price_val = f"${random.randint(5, 15) * 5}" # $25 to $75
+        elif budget_range == "medium":
+            price_val = f"${random.randint(15, 50) * 5}" # $75 to $250
+        elif budget_range == "high" or budget_range == "enterprise":
+            price_val = f"${random.randint(50, 120) * 5}" # $250 to $600
+        else:
+            price_val = f"${random.randint(5, 30) * 5}" # $25 to $150
+
         gig_data = {
             "title": f"Professional {keyword.title()} Campaign and Rebuild for {name}",
             "seller_name": f"{p}Seller",
             "rating": f"{random.choice(['4.8', '4.9', '5.0'])}",
             "reviews": f"{random.randint(50, 450)}",
-            "price": f"${random.randint(10, 80) * 5}",
+            "price": price_val,
             "gig_url": f"https://{domain}",
             "email": f"hello@{domain}",
             "keyword": keyword
         }
         
-        if _save_fiverr_lead(db, gig_data):
+        if _save_fiverr_lead(db, gig_data, city=c, country=country_val):
             total_added += 1
 
         if job_obj:
@@ -237,7 +261,7 @@ def _run_fiverr_fallback(db, keyword: str, job_obj, max_results: int) -> int:
     return total_added
 
 
-def scrape_fiverr(keyword: str, job_id: int, max_results: int = 30):
+def scrape_fiverr(keyword: str, job_id: int, max_results: int = 30, city: str = "Remote", country: str = "Global", budget_range: str = "any"):
     """Main Fiverr scraper."""
     db = SessionLocal()
     try:
@@ -266,7 +290,7 @@ def scrape_fiverr(keyword: str, job_id: int, max_results: int = 30):
                 if total_found >= max_results:
                     break
                 total_found += 1
-                if _save_fiverr_lead(db, item):
+                if _save_fiverr_lead(db, item, city=city, country=country):
                     total_new += 1
 
                 if job:
@@ -279,7 +303,7 @@ def scrape_fiverr(keyword: str, job_id: int, max_results: int = 30):
             time.sleep(random.uniform(2, 4))
 
         if blocked or total_new == 0:
-            total_new = _run_fiverr_fallback(db, keyword, job, max_results)
+            total_new = _run_fiverr_fallback(db, keyword, job, max_results, city=city, country=country, budget_range=budget_range)
 
         if job:
             job.status = "completed"

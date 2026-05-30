@@ -264,6 +264,11 @@ def analyze_lead_endpoint(
     lead = db.query(Lead).filter(Lead.id == lead_id).first()
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
+    
+    # Synchronously set to analyzing for instant front-end polling detection
+    lead.status = "analyzing"
+    db.commit()
+    
     background_tasks.add_task(_do_analyze, lead_id)
     return {"message": "Analysis started", "lead_id": lead_id}
 
@@ -279,5 +284,10 @@ def generate_messages_endpoint(
         raise HTTPException(status_code=404, detail="Lead not found")
     if not lead.ai_analysis:
         raise HTTPException(status_code=400, detail="Run analysis first")
+    
+    # Synchronously set to generating for instant front-end polling detection
+    lead.status = "generating"
+    db.commit()
+    
     background_tasks.add_task(_do_generate_messages, lead_id)
     return {"message": "Message generation started", "lead_id": lead_id}

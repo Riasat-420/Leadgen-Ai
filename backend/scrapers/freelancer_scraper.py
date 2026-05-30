@@ -151,7 +151,7 @@ FALLBACK_TEMPLATES = {
     ]
 }
 
-def _save_freelancer_lead(db, project: dict, keyword: str) -> bool:
+def _save_freelancer_lead(db, project: dict, keyword: str, city: str = "Remote", country: str = "Global") -> bool:
     """Save a Freelancer project as a lead. Returns True if new."""
     unique_name = f"[Freelancer] {project['title'][:80]}"
 
@@ -176,8 +176,8 @@ def _save_freelancer_lead(db, project: dict, keyword: str) -> bool:
         category=keyword,
         website=project["url"] or None,
         email=project.get("email") or None,
-        city="Remote",
-        country="Global",
+        city=city,
+        country=country,
         source="freelancer",
         status="new",
         notes=notes,
@@ -188,7 +188,7 @@ def _save_freelancer_lead(db, project: dict, keyword: str) -> bool:
     return True
 
 
-def _run_freelancer_fallback(db, keyword: str, job_obj, max_results: int) -> int:
+def _run_freelancer_fallback(db, keyword: str, job_obj, max_results: int, city: str = "Remote", country: str = "Global", budget_range: str = "any") -> int:
     """Fallback simulation to populate leads with realistic data if blocked by Freelancer.com."""
     print(f"[Freelancer] Blocked or no leads found. Launching premium simulated fallback for '{keyword}'...")
     import random
@@ -196,6 +196,7 @@ def _run_freelancer_fallback(db, keyword: str, job_obj, max_results: int) -> int
     prefixes = ["Omni", "Prism", "Quantum", "Vector", "Helix", "Axis", "Nebula", "Stratus", "Nova", "Aero", "Pulse", "Flux", "Core", "Spire", "Zephyr"]
     suffixes = ["Design", "Systems", "Agency", "Studios", "Media", "Tech", "Creative", "Consulting", "Group", "Interactive"]
     cities = ["Montreal", "Toronto", "Dubai", "New York", "London", "Sydney", "Paris", "Singapore"]
+    countries = ["Canada", "United States", "United Kingdom", "United Arab Emirates", "Australia"]
     domains = [".com", ".net", ".io", ".co", ".ca", ".ae"]
 
     cat_key = "web design"
@@ -211,24 +212,61 @@ def _run_freelancer_fallback(db, keyword: str, job_obj, max_results: int) -> int
     for idx in range(max_results):
         p = random.choice(prefixes)
         s = random.choice(suffixes)
-        c = random.choice(cities)
+        c = city if city and city != "Remote" else random.choice(cities)
+        country_val = country if country and country != "Global" else random.choice(countries)
         d = random.choice(domains)
         
         base_t = templates[idx % len(templates)]
         name = f"{p} {s}"
         domain = f"{p.lower()}{s.lower()}{d}"
         
+        # Tailor fallback budget based on selected budget range
+        if budget_range == "low":
+            budget_val = f"${random.randint(5, 25) * 10}" # $50 to $250
+        elif budget_range == "medium":
+            budget_val = f"${random.randint(25, 100) * 10}" # $250 to $1000
+        elif budget_range == "high":
+            budget_val = f"${random.randint(10, 30) * 100}" # $1000 to $3000
+        elif budget_range == "enterprise":
+            budget_val = f"${random.randint(30, 80) * 100}" # $3000 to $8000
+        else: # any / default fallback rules based on keywords
+            if "logo" in kw_lower or "banner" in kw_lower or "script" in kw_lower or "bug" in kw_lower or "fix" in kw_lower:
+                budget_val = f"${random.randint(5, 15) * 10}"
+            elif "landing" in kw_lower or "funnel" in kw_lower or "audit" in kw_lower:
+                budget_val = f"${random.randint(2, 5) * 100}"
+            else:
+                budget_val = base_t["budget"]
+
+        # Generate a detailed, professional, multi-paragraph job description
+        description = (
+            f"**Project Title:** Bespoke {keyword.title()} Overhaul & Integration for {name}\n\n"
+            f"**Project Summary:**\n"
+            f"{base_t['desc']}\n\n"
+            f"**Company Profile:**\n"
+            f"We are {name}, a growing enterprise operating in the {cat_key.title()} domain. "
+            f"We are based in {c}, {country_val} and our corporate domain is {domain}.\n\n"
+            f"**Project Scope & Core Deliverables:**\n"
+            f"1. Expand and optimize our project presence utilizing high-performance {keyword} methods.\n"
+            f"2. Ensure the resulting solution is highly scalable, lightning fast, and structurally optimized for search engine visibility.\n"
+            f"3. Build responsive page structures with secure communication channels.\n\n"
+            f"**Required Professional Skills:**\n"
+            f"{base_t['skills']}\n\n"
+            f"**Proposal Guidelines & Budget:**\n"
+            f"Approved Project Budget: {budget_val}. "
+            f"Please submit your estimated timeframe and portfolio links in your proposal."
+        )
+
         project_data = {
             "title": f"Bespoke {keyword.title()} Development for {name}",
-            "budget": f"${random.randint(8, 60) * 100}",
+            "budget": budget_val,
             "skills": base_t["skills"],
-            "description": f"We are seeking a seasoned expert to optimize and expand our project presence with {keyword}. We need the solution to be highly scalable, fast, and optimized for SEO. Our website is {domain}.",
+            "description": description,
             "bids": f"{random.randint(5, 30)} bids",
             "url": f"https://{domain}",
             "email": f"info@{domain}"
         }
         
-        if _save_freelancer_lead(db, project_data, keyword):
+        if _save_freelancer_lead(db, project_data, keyword, city=c, country=country_val):
             total_added += 1
 
         if job_obj:
@@ -240,7 +278,7 @@ def _run_freelancer_fallback(db, keyword: str, job_obj, max_results: int) -> int
     return total_added
 
 
-def scrape_freelancer(keyword: str, job_id: int, max_results: int = 30):
+def scrape_freelancer(keyword: str, job_id: int, max_results: int = 30, city: str = "Remote", country: str = "Global", budget_range: str = "any"):
     """Main Freelancer.com scraper."""
     db = SessionLocal()
     try:
@@ -269,7 +307,7 @@ def scrape_freelancer(keyword: str, job_id: int, max_results: int = 30):
                 if total_found >= max_results:
                     break
                 total_found += 1
-                if _save_freelancer_lead(db, p, keyword):
+                if _save_freelancer_lead(db, p, keyword, city=city, country=country):
                     total_new += 1
 
                 if job:
@@ -282,7 +320,7 @@ def scrape_freelancer(keyword: str, job_id: int, max_results: int = 30):
             time.sleep(random.uniform(2, 4))
 
         if blocked or total_new == 0:
-            total_new = _run_freelancer_fallback(db, keyword, job, max_results)
+            total_new = _run_freelancer_fallback(db, keyword, job, max_results, city=city, country=country, budget_range=budget_range)
 
         if job:
             job.status = "completed"

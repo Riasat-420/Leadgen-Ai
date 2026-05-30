@@ -32,11 +32,11 @@ DEFAULT_MAX_RESULTS: int = 30
 
 # ── Server ─────────────────────────────────────────────────
 HOST: str = os.getenv("HOST", "0.0.0.0")
-PORT: int = int(os.getenv("PORT", "8000"))
+PORT: int = int(os.getenv("PORT", "8005"))
 
 # ── Email Tracking ─────────────────────────────────────────
 # Set this to your public URL when deployed (e.g. https://yourapp.render.com)
-TRACKING_BASE_URL: str = os.getenv("TRACKING_BASE_URL", "http://localhost:8000")
+TRACKING_BASE_URL: str = os.getenv("TRACKING_BASE_URL", "http://localhost:8005")
 
 # ── Pre-configured target markets ─────────────────────────
 DEFAULT_TARGETS = [

@@ -32,7 +32,10 @@ class ScrapeRequest(BaseModel):
 class PlatformScrapeRequest(BaseModel):
     platform: str       # upwork | freelancer | linkedin | fiverr
     keyword: str
+    city: Optional[str] = "Remote"
+    country: Optional[str] = "Global"
     max_results: Optional[int] = 30
+    budget_range: Optional[str] = "any"
 
 
 def _job_to_dict(job: ScrapeJob) -> dict:
@@ -93,7 +96,7 @@ def start_scrape(req: ScrapeRequest, background_tasks: BackgroundTasks,
 
 # ── Platform scrapers (Upwork, Freelancer, LinkedIn, Fiverr) ─
 
-def _run_platform_scraper(platform: str, keyword: str, job_id: int, max_results: int):
+def _run_platform_scraper(platform: str, keyword: str, job_id: int, max_results: int, city: str = "Remote", country: str = "Global", budget_range: str = "any"):
     """Run the appropriate platform scraper in a background thread."""
     scraper_map = {
         "upwork":     scrape_upwork,
@@ -103,7 +106,7 @@ def _run_platform_scraper(platform: str, keyword: str, job_id: int, max_results:
     }
     fn = scraper_map.get(platform)
     if fn:
-        fn(keyword, job_id, max_results)
+        fn(keyword, job_id, max_results, city, country, budget_range)
     else:
         print(f"[Scraper Router] Unknown platform: {platform}")
 
@@ -120,12 +123,21 @@ def start_platform_scrape(req: PlatformScrapeRequest, background_tasks: Backgrou
     }
     label = platform_labels.get(req.platform, req.platform.title())
     query = f"[{label}] {req.keyword}"
+    
+    # Include location in query title if customized
+    locs = []
+    if req.city and req.city != "Remote":
+        locs.append(req.city)
+    if req.country and req.country != "Global":
+        locs.append(req.country)
+    if locs:
+        query += f" ({', '.join(locs)})"
 
     job = ScrapeJob(
         query=query,
-        city="Remote",
+        city=req.city or "Remote",
         category=req.keyword,
-        country="Global",
+        country=req.country or "Global",
         status="pending",
     )
     db.add(job)
@@ -134,7 +146,7 @@ def start_platform_scrape(req: PlatformScrapeRequest, background_tasks: Backgrou
 
     background_tasks.add_task(
         _run_platform_scraper,
-        req.platform, req.keyword, job.id, req.max_results,
+        req.platform, req.keyword, job.id, req.max_results, req.city, req.country, req.budget_range
     )
 
     return {
