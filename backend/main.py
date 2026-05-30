@@ -44,11 +44,7 @@ app.include_router(settings.router)
 # ── Static Frontend ────────────────────────────────────────
 FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend")
 if os.path.exists(FRONTEND_DIR):
-    app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
-
-    @app.get("/")
-    def serve_index():
-        return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))
+    app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
 
 # ── Lifecycle ──────────────────────────────────────────────
 @app.on_event("startup")
